@@ -1,825 +1,381 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="light dark" />
-    <link rel="icon" href="data:," />
-    <title>TempMail — Free Temporary Email</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
-    <style>
-      :root {
-        --bg: #f4f6f5;
-        --surface: #ffffff;
-        --surface-2: #eef1ef;
-        --ink: #131a17;
-        --ink-2: #4c5a54;
-        --ink-3: #7d8b85;
-        --line: #dde3e0;
-        --accent: #0b7a55;
-        --accent-strong: #095f42;
-        --accent-soft: #e2f3ec;
-        --danger: #c0392b;
-        --danger-soft: #fbeae8;
-        --warn: #9a6a00;
-        --warn-soft: #fdf3d7;
-        --code-bg: #131a17;
-        --code-ink: #7be3b8;
-        --shadow: 0 10px 30px rgba(19, 26, 23, 0.08);
-        color-scheme: light;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0e1210;
-          --surface: #171d1a;
-          --surface-2: #1f2724;
-          --ink: #eef3f1;
-          --ink-2: #a9bab3;
-          --ink-3: #72827b;
-          --line: #2a342f;
-          --accent: #2fbf8f;
-          --accent-strong: #4ad3a3;
-          --accent-soft: #173028;
-          --danger: #ff8a7a;
-          --danger-soft: #3a201c;
-          --warn: #f2c94c;
-          --warn-soft: #332a12;
-          --code-bg: #050807;
-          --code-ink: #7be3b8;
-          --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-          color-scheme: dark;
-        }
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; }
-      body {
-        background: var(--bg);
-        color: var(--ink);
-        font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-        -webkit-font-smoothing: antialiased;
-        line-height: 1.5;
-      }
-      .wrap { max-width: 660px; margin: 0 auto; padding: 28px 16px 56px; }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TempMail — Free Temporary Email</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%); min-height: 100vh; color: #e2e8f0; padding: 20px 12px 60px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 34px; font-weight: 800; background: linear-gradient(90deg, #38bdf8, #a78bfa, #f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header p { color: #94a3b8; font-size: 14px; margin-top: 4px; }
+  .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 20px; backdrop-filter: blur(8px); margin-bottom: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.35); }
+  .label { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
+  .email-row { display: flex; gap: 10px; align-items: stretch; }
+  #emailAddr { flex: 1; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 13px 14px; font-size: 16px; font-weight: 600; color: #7dd3fc; word-break: break-all; display: flex; align-items: center; min-height: 50px; }
+  button { cursor: pointer; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; transition: transform .08s, opacity .15s; }
+  button:active { transform: scale(0.97); }
+  .btn-copy { background: linear-gradient(90deg, #0ea5e9, #6366f1); color: #fff; padding: 0 22px; min-height: 50px; }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .actions button { flex: 1; padding: 12px 8px; min-width: 100px; }
+  .btn-new { background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; }
+  .btn-refresh { background: rgba(255,255,255,0.12); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15); }
+  .btn-delete { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(239,68,68,0.35); }
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: #94a3b8; }
+  .meta .dot { color: #4ade80; }
+  .err-line { display: none; margin-top: 10px; font-size: 12.5px; color: #fca5a5; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 9px 12px; line-height: 1.6; }
+  .inbox-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .inbox-head h2 { font-size: 19px; }
+  .badge { background: #ef4444; color: #fff; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 9px; margin-left: 6px; display: none; }
+  .auto { font-size: 12px; color: #94a3b8; }
+  .spin { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .msg { background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.10); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .msg:hover { border-color: #38bdf8; background: rgba(56,189,248,0.08); }
+  .msg.unread { border-left: 4px solid #38bdf8; }
+  .msg-top { display: flex; justify-content: space-between; gap: 10px; }
+  .msg-from { font-weight: 700; font-size: 14px; color: #f1f5f9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg-time { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+  .msg-subj { font-size: 14px; color: #cbd5e1; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg-snip { font-size: 13px; color: #94a3b8; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { text-align: center; padding: 38px 10px; color: #94a3b8; }
+  .empty .big { font-size: 44px; margin-bottom: 8px; }
+  .viewer { display: none; }
+  .viewer.open { display: block; }
+  .viewer h3 { font-size: 17px; margin-bottom: 6px; word-break: break-word; }
+  .viewer .vmeta { font-size: 13px; color: #94a3b8; margin-bottom: 12px; line-height: 1.7; word-break: break-all; }
+  .codes { margin: 12px 0; }
+  .codes .label { margin-bottom: 6px; }
+  .code-chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.45); color: #86efac; border-radius: 10px; padding: 8px 12px; margin: 4px 6px 4px 0; font-size: 18px; font-weight: 800; letter-spacing: 2px; }
+  .code-chip button { background: #22c55e; color: #fff; font-size: 11px; padding: 5px 10px; border-radius: 8px; letter-spacing: 0; }
+  .body-box { background: #fff; border-radius: 12px; overflow: hidden; margin-top: 8px; }
+  .body-box pre { padding: 16px; font-size: 13px; color: #1e293b; white-space: pre-wrap; word-break: break-word; font-family: inherit; }
+  .body-box iframe { width: 100%; height: 420px; border: none; display: block; background: #fff; }
+  .close-view { background: rgba(255,255,255,0.12); color: #e2e8f0; padding: 9px 16px; margin-bottom: 12px; }
+  footer { text-align: center; color: #64748b; font-size: 12px; line-height: 1.7; margin-top: 8px; }
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(80px); background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 12px 22px; border-radius: 999px; font-size: 14px; font-weight: 600; opacity: 0; transition: all .3s; z-index: 99; box-shadow: 0 10px 30px rgba(0,0,0,0.5); white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 520px) {
+    header h1 { font-size: 27px; }
+    .email-row { flex-direction: column; }
+    .btn-copy { min-height: 46px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📬 TempMail</h1>
+    <p>Free temporary email — instant inbox, no signup, codes receive karo!</p>
+  </header>
 
-      header.hero { text-align: left; margin-bottom: 22px; }
-      header.hero h1 {
-        font-size: 34px; font-weight: 800; letter-spacing: -0.02em;
-        margin: 0 0 6px; display: flex; align-items: center; gap: 10px;
-      }
-      header.hero h1 .logo {
-        width: 42px; height: 42px; flex: none; display: grid; place-items: center;
-        background: var(--accent); border-radius: 12px; color: #fff;
-      }
-      header.hero p { margin: 0; color: var(--ink-2); font-size: 16px; font-weight: 600; }
-
-      .card {
-        background: var(--surface); border: 1px solid var(--line);
-        border-radius: 18px; box-shadow: var(--shadow); padding: 20px;
-        margin-bottom: 18px;
-      }
-      .card-label {
-        font-size: 12px; font-weight: 800; letter-spacing: 0.09em;
-        text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px;
-      }
-
-      .email-box {
-        background: var(--code-bg); border-radius: 12px; padding: 16px;
-        display: flex; align-items: center; gap: 10px;
-      }
-      .email-addr {
-        font-family: "JetBrains Mono", ui-monospace, monospace;
-        font-size: 17px; font-weight: 700; color: var(--code-ink);
-        word-break: break-all; flex: 1; min-width: 0;
-      }
-      .email-addr.loading { color: var(--ink-3); font-family: "Manrope", sans-serif; font-size: 15px; font-weight: 700; }
-      .email-addr.failed { color: #ff9d8a; font-family: "Manrope", sans-serif; font-size: 15px; font-weight: 700; }
-      .domain-note {
-        display: none; margin: 12px 0 0; font-size: 13px; font-weight: 600;
-        color: var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 10px 12px;
-      }
-      .domain-note.show { display: block; }
-
-      .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-      button {
-        font-family: inherit; font-weight: 800; font-size: 15px;
-        border-radius: 12px; border: 1px solid transparent; cursor: pointer;
-        padding: 13px 18px; display: inline-flex; align-items: center; gap: 8px;
-        transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
-      }
-      button:active { transform: scale(0.97); }
-      button:disabled { opacity: 0.55; cursor: wait; }
-      .btn-primary { background: var(--accent); color: #fff; flex: 1 1 150px; justify-content: center; }
-      .btn-primary:hover { background: var(--accent-strong); }
-      .btn-ghost { background: var(--surface-2); color: var(--ink); border-color: var(--line); flex: 1 1 130px; justify-content: center; }
-      .btn-ghost:hover { border-color: var(--ink-3); }
-      .btn-danger { background: var(--danger-soft); color: var(--danger); width: 100%; justify-content: center; margin-top: 10px; }
-      .btn-danger:hover { filter: brightness(0.97); }
-
-      .status-row {
-        display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px;
-        font-size: 14px; font-weight: 700; color: var(--ink-2);
-      }
-      .status-row .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: 1px; }
-      .dot.ok { background: var(--accent); }
-      .dot.err { background: var(--danger); }
-      .dot.busy { background: var(--warn); }
-
-      .inbox-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-      .inbox-head h2 { font-size: 21px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
-      .inbox-head .auto { font-size: 13px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
-
-      .mail-list { list-style: none; margin: 0; padding: 0; }
-      .mail-item {
-        width: 100%; text-align: left; background: transparent; border: none;
-        border-top: 1px solid var(--line); padding: 14px 6px; border-radius: 0;
-        display: block; cursor: pointer; color: var(--ink);
-      }
-      .mail-item:hover { background: var(--surface-2); }
-      .mail-item .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-      .mail-item .from { font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .mail-item .time { font-size: 12px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
-      .mail-item .subj { font-weight: 700; font-size: 14px; color: var(--ink); margin-top: 2px; display: flex; align-items: center; gap: 7px; }
-      .mail-item .excerpt { font-size: 13px; color: var(--ink-2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-      .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
-      .new-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 99px; letter-spacing: 0.05em; }
-
-      .empty {
-        text-align: center; padding: 34px 12px 26px; color: var(--ink-2);
-      }
-      .empty .big { font-size: 40px; line-height: 1; margin-bottom: 10px; }
-      .empty p { margin: 0; font-weight: 700; font-size: 15px; }
-      .empty p.sub { font-weight: 600; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
-
-      .reader-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-      .btn-back { background: var(--surface-2); color: var(--ink); border-color: var(--line); padding: 9px 14px; font-size: 14px; }
-      .reader h3 { font-size: 19px; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.01em; }
-      .reader .meta { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 14px; word-break: break-all; }
-      .otp-box {
-        background: var(--accent-soft); border: 1.5px dashed var(--accent);
-        border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-      }
-      .otp-box .lbl { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-strong); }
-      .otp-box .code {
-        font-family: "JetBrains Mono", monospace; font-size: 30px; font-weight: 700;
-        letter-spacing: 0.18em; color: var(--ink); line-height: 1.1;
-      }
-      .otp-box button { background: var(--accent); color: #fff; padding: 10px 16px; font-size: 14px; }
-      .mail-body {
-        font-size: 15px; line-height: 1.65; color: var(--ink);
-        white-space: pre-wrap; word-break: break-word;
-        background: var(--surface-2); border-radius: 12px; padding: 16px;
-        max-height: 520px; overflow: auto;
-      }
-      .mail-body iframe { width: 100%; height: 420px; border: none; background: #fff; border-radius: 8px; }
-
-      .steps { display: grid; gap: 12px; }
-      @media (min-width: 560px) { .steps { grid-template-columns: repeat(3, 1fr); } }
-      .step { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-      .step .n {
-        width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft);
-        color: var(--accent-strong); font-weight: 800; font-size: 14px;
-        display: grid; place-items: center; margin-bottom: 8px;
-      }
-      .step p { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink-2); }
-      .step p b { color: var(--ink); }
-
-      .note {
-        font-size: 13px; font-weight: 600; color: var(--warn);
-        background: var(--warn-soft); border-radius: 12px; padding: 12px 14px; margin-top: 18px;
-      }
-      .err-banner {
-        display: none; background: var(--danger-soft); color: var(--danger);
-        border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 700; margin-top: 14px;
-      }
-      .err-banner.show { display: block; }
-      .err-banner button { background: var(--danger); color: #fff; padding: 7px 14px; font-size: 13px; margin-left: 8px; border-radius: 8px; }
-
-      #toast {
-        position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
-        background: var(--ink); color: var(--bg); font-weight: 800; font-size: 14px;
-        padding: 12px 20px; border-radius: 99px; opacity: 0; pointer-events: none;
-        transition: opacity 0.25s ease, transform 0.25s ease; z-index: 50;
-        max-width: calc(100vw - 32px); text-align: center;
-        box-shadow: 0 12px 32px rgba(0,0,0,0.25);
-      }
-      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-      .spin { display: inline-block; animation: sp 0.9s linear infinite; }
-      @keyframes sp { to { transform: rotate(360deg); } }
-      @media (prefers-reduced-motion: reduce) { .spin { animation: none; } button { transition: none; } }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <header class="hero">
-        <h1>
-          <span class="logo" aria-hidden="true">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-          </span>
-          TempMail
-        </h1>
-        <p>Free temporary email — instant inbox, no signup. Verification codes yahin receive karo!</p>
-      </header>
-
-      <!-- Email card -->
-      <section class="card" aria-label="Your temporary email">
-        <p class="card-label">Your temporary email address</p>
-        <div class="email-box">
-          <span class="email-addr loading" id="emailAddr">Email ban raha hai…</span>
-        </div>
-        <p class="domain-note" id="domainNote">ℹ️ Note: @jacob.lat domain abhi Ninja Mail par available nahi hai, is liye Ninja ne ye .lat domain diya hai — mails isi address par aayenge, bilkul waisa hi kaam karega.</p>
-        <div class="btn-row">
-          <button class="btn-primary" id="btnCopy" type="button">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copy
-          </button>
-          <button class="btn-ghost" id="btnNew" type="button">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg>
-            New Email
-          </button>
-          <button class="btn-ghost" id="btnRefresh" type="button">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-            Refresh Inbox
-          </button>
-        </div>
-        <button class="btn-danger" id="btnDelete" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-          Delete &amp; New Banao
-        </button>
-        <div class="status-row">
-          <span><span class="dot busy" id="statusDot"></span><span id="statusText">Connecting…</span></span>
-          <span id="timerText">⏱ —</span>
-          <span id="countText">✉ 0 messages</span>
-        </div>
-        <div class="err-banner" id="errBanner">
-          <span id="errText">Connection fail ho gaya.</span>
-          <button type="button" id="btnRetry">Retry</button>
-        </div>
-      </section>
-
-      <!-- Inbox list -->
-      <section class="card" id="inboxCard" aria-label="Inbox">
-        <div class="inbox-head">
-          <h2>📥 Inbox</h2>
-          <span class="auto">Auto-refresh: ON (8s)</span>
-        </div>
-        <div class="empty" id="inboxEmpty">
-          <div class="big" aria-hidden="true">📬</div>
-          <p id="emptyTitle">Waiting for emails…</p>
-          <p class="sub" id="emptySub">Is address par mail bhejo, yahan aa jayega. Inbox khud refresh hota rehta hai.</p>
-        </div>
-        <ul class="mail-list" id="mailList"></ul>
-      </section>
-
-      <!-- Mail reader -->
-      <section class="card reader" id="readerCard" aria-label="Message" hidden>
-        <div class="reader-head">
-          <button class="btn-back" id="btnBack" type="button">← Inbox</button>
-        </div>
-        <div class="otp-box" id="otpBox" hidden>
-          <div>
-            <div class="lbl">Verification code mila!</div>
-            <div class="code" id="otpCode">------</div>
-          </div>
-          <button type="button" id="btnCopyOtp">Code Copy Karo</button>
-        </div>
-        <h3 id="readerSubject">…</h3>
-        <div class="meta" id="readerMeta"></div>
-        <div class="mail-body" id="readerBody">Loading…</div>
-      </section>
-
-      <!-- How it works -->
-      <div class="steps" aria-label="How to use">
-        <div class="step"><div class="n">1</div><p><b>Email copy karo</b> — upar wala address jahan signup karna hai wahan paste kar do.</p></div>
-        <div class="step"><div class="n">2</div><p><b>Code ka wait karo</b> — mail 10–30 second me inbox me aa jata hai, auto-refresh on hai.</p></div>
-        <div class="step"><div class="n">3</div><p><b>Mail kholo</b> — verification code alag se highlight hoga, ek tap me copy ho jayega.</p></div>
-      </div>
-
-      <p class="note">⚠️ Temp email public hoti hai — bank, paiso ya important accounts ke liye use mat karna. Ye Ninja Mail ki email hai — 24 ghante baad expire ho jati hai.</p>
+  <div class="card">
+    <div class="label">Your temporary email address</div>
+    <div class="email-row">
+      <div id="emailAddr">Generating your email…</div>
+      <button class="btn-copy" id="copyBtn">📋 Copy</button>
     </div>
+    <div class="err-line" id="errLine"></div>
+    <div class="actions">
+      <button class="btn-new" id="newBtn">🎲 New Email</button>
+      <button class="btn-refresh" id="refreshBtn">🔄 Refresh Inbox</button>
+      <button class="btn-delete" id="deleteBtn">🗑️ Delete</button>
+    </div>
+    <div class="meta">
+      <span><span class="dot">●</span> <span id="statusText">Active</span></span>
+      <span>⏱️ <span id="timer">60:00</span> left</span>
+      <span>✉️ <span id="countText">0 messages</span></span>
+    </div>
+  </div>
 
-    <div id="toast" role="status" aria-live="polite"></div>
+  <div class="card viewer" id="viewer">
+    <button class="close-view" id="closeView">← Back to inbox</button>
+    <h3 id="vSubject"></h3>
+    <div class="vmeta" id="vMeta"></div>
+    <div class="codes" id="codesBox" style="display:none">
+      <div class="label">🔑 Verification code found</div>
+      <div id="codesList"></div>
+    </div>
+    <div class="body-box" id="bodyBox"></div>
+  </div>
 
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script>
-      (function () {
-        "use strict";
-        // ---- Ninja Mail (TempMail Ninja) backend — Socket.IO ----
-        var SOCKET_URL = "https://tm-app.solucioneswc.com:2083";
-        var WANT_DOMAIN = "jacob.lat";
-        var NAMES = ["ester","luis","helen","marco","sofia","diego","lucia","pablo","carmen","jorge","ana","maria","pedro","laura","miguel","rosa","ivan","nina","oscar","elena"];
+  <div class="card">
+    <div class="inbox-head">
+      <h2>📥 Inbox <span class="badge" id="unreadBadge">0</span></h2>
+      <span class="auto" id="autoText">Auto-refresh: ON (8s)</span>
+    </div>
+    <div id="msgList">
+      <div class="empty"><div class="big">📭</div>Waiting for emails…<br>Is address par mail bhejo, yahan aa jayega.</div>
+    </div>
+  </div>
 
-        var state = {
-          socket: null,
-          connected: false,
-          bootstrapped: false,
-          token: null,
-          email: null,
-          expiresAtMs: 0,
-          mails: [],        // newest first
-          knownIds: null,   // null until first successful load
-          readIds: {},
-          currentOtp: null,
-          busy: false,
-          inboxBusy: false
-        };
+  <footer>
+    ⚠️ Temporary emails public hote hain — bank ya important accounts ke liye use na karo.<br>
+    Inbox har 8 second me auto-refresh hota hai. Email 60 minute tak valid rehta hai.<br>
+    Tip: File ko Chrome browser me kholo — WhatsApp ke andar wale viewer me internet block ho sakta hai.
+  </footer>
+</div>
 
-        var el = {
-          addr: document.getElementById("emailAddr"),
-          domainNote: document.getElementById("domainNote"),
-          dot: document.getElementById("statusDot"),
-          status: document.getElementById("statusText"),
-          timer: document.getElementById("timerText"),
-          count: document.getElementById("countText"),
-          err: document.getElementById("errBanner"),
-          errText: document.getElementById("errText"),
-          list: document.getElementById("mailList"),
-          empty: document.getElementById("inboxEmpty"),
-          emptyTitle: document.getElementById("emptyTitle"),
-          emptySub: document.getElementById("emptySub"),
-          inboxCard: document.getElementById("inboxCard"),
-          readerCard: document.getElementById("readerCard"),
-          readerSubject: document.getElementById("readerSubject"),
-          readerMeta: document.getElementById("readerMeta"),
-          readerBody: document.getElementById("readerBody"),
-          otpBox: document.getElementById("otpBox"),
-          otpCode: document.getElementById("otpCode"),
-          toast: document.getElementById("toast"),
-          btnCopy: document.getElementById("btnCopy"),
-          btnNew: document.getElementById("btnNew"),
-          btnRefresh: document.getElementById("btnRefresh"),
-          btnDelete: document.getElementById("btnDelete")
-        };
+<div id="toast"></div>
 
-        var toastTimer = null;
-        function toast(msg) {
-          el.toast.textContent = msg;
-          el.toast.classList.add("show");
-          clearTimeout(toastTimer);
-          toastTimer = setTimeout(function () { el.toast.classList.remove("show"); }, 2400);
-        }
+<script>
+const API = 'https://api.guerrillamail.com/ajax.php';
+const STORE_KEY = 'tempmail-gm-session-v1';
+const SESSION_MINS = 60;
 
-        function setStatus(kind, text) {
-          el.dot.className = "dot " + kind;
-          el.status.textContent = text;
-        }
-        function showError(msg) {
-          el.errText.textContent = msg;
-          el.err.classList.add("show");
-          setStatus("err", "Error");
-        }
-        function hideError() { el.err.classList.remove("show"); }
+let session = null;      // { sid_token, address, createdAt }
+let messages = [];
+let timerInt = null, pollInt = null;
 
-        // ---------- token storage (Ninja session token) ----------
-        function loadToken() {
-          try {
-            return window.localStorage.getItem("email_token") ||
-                   window.localStorage.getItem("visitor_token") || null;
-          } catch (e) { return null; }
-        }
-        function saveToken(t) {
-          if (!t) return;
-          state.token = t;
-          try {
-            window.localStorage.setItem("email_token", t);
-            window.localStorage.setItem("visitor_token", t);
-          } catch (e) {}
-        }
-        function clearToken() {
-          state.token = null;
-          try {
-            window.localStorage.removeItem("email_token");
-            window.localStorage.removeItem("visitor_token");
-          } catch (e) {}
-        }
+const $ = id => document.getElementById(id);
+const emailEl = $('emailAddr'), msgListEl = $('msgList');
 
-        // ---------- socket helpers ----------
-        function emitAck(event, args, timeoutMs) {
-          return new Promise(function (resolve, reject) {
-            if (!state.socket || !state.connected) { reject(new Error("not_connected")); return; }
-            var done = false;
-            var to = setTimeout(function () {
-              if (!done) { done = true; reject(new Error("timeout")); }
-            }, timeoutMs || 5000);
-            var cb = function (resp) {
-              if (done) return;
-              done = true;
-              clearTimeout(to);
-              resolve(resp);
-            };
-            try {
-              if (args && args.length) state.socket.emit(event, args[0], cb);
-              else state.socket.emit(event, cb);
-            } catch (e) {
-              if (!done) { done = true; clearTimeout(to); reject(e); }
-            }
-          });
-        }
-        function respError(resp) {
-          return resp && typeof resp === "object" && resp.error ? String(resp.error) : null;
-        }
-        function friendlyError(code) {
-          if (!code) return "Ninja Mail se jawab nahi aaya — dobara try karo.";
-          if (code.indexOf("rate_limit") === 0) return "Ninja Mail ne rate limit lagaya hai — 1–2 minute ruk ke Retry dabao.";
-          if (code === "session_expired" || code.indexOf("auth") === 0 || code === "session_active_email_required")
-            return "Session expire ho gaya — Retry dabao, naya email ban jayega.";
-          if (code === "domain_invalid_for_type") return "@jacob.lat abhi available nahi hai.";
-          return "Ninja Mail error: " + code;
-        }
+// ---------- helpers ----------
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 3000);
+}
+function showErr(msg) {
+  const el = $('errLine');
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+function hideErr() { $('errLine').style.display = 'none'; }
+function randomUsername() {
+  const adj = ['cool','swift','happy','brave','lucky','silent','rapid','sunny','clever','mighty','cosmic','gentle','frosty','wild','golden','silver','turbo','magic','super','jolly'];
+  const noun = ['tiger','eagle','fox','wolf','panda','lion','hawk','bear','shark','falcon','cobra','raven','dragon','phoenix','leopard','otter','bison','viper'];
+  return adj[Math.floor(Math.random()*adj.length)] + '.' +
+         noun[Math.floor(Math.random()*noun.length)] + '.' +
+         Math.floor(1000 + Math.random()*9000);
+}
+async function api(params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(API + '?' + qs);
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  return res.json();
+}
+function saveSession() { localStorage.setItem(STORE_KEY, JSON.stringify(session)); }
+function loadSession() { try { return JSON.parse(localStorage.getItem(STORE_KEY)); } catch(e) { return null; } }
+function clearSession() { localStorage.removeItem(STORE_KEY); session = null; }
+function timeAgo(m) {
+  if (m.mail_timestamp && m.mail_timestamp > 0) {
+    const s = Math.floor(Date.now()/1000 - m.mail_timestamp);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s/60) + ' min ago';
+    if (s < 86400) return Math.floor(s/3600) + ' hr ago';
+    return new Date(m.mail_timestamp*1000).toLocaleString();
+  }
+  return m.mail_date || '';
+}
+function esc(str) {
+  return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function stripHtml(html) {
+  const d = document.createElement('div');
+  d.innerHTML = html || '';
+  return d.textContent || '';
+}
+function copyText(text, msg) {
+  const done = () => toast(msg || 'Copied! ✅');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch(e) { toast('Copy failed — manually select karo'); }
+  document.body.removeChild(ta);
+}
 
-        function connectSocket() {
-          if (typeof window.io !== "function") {
-            el.addr.classList.remove("loading");
-            el.addr.classList.add("failed");
-            el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-            showError("Socket library load nahi hui — internet check karke Retry dabao.");
-            renderList(null);
-            return;
-          }
-          if (state.socket) { try { state.socket.disconnect(); } catch (e) {} state.socket = null; }
-          state.connected = false;
-          state.bootstrapped = false;
-          var token = state.token || loadToken();
-          state.token = token;
-          var query = { locale: "en", user_token: "empty", visitor_token: token || "empty" };
-          if (token) query.token = token;
-          var socket = window.io(SOCKET_URL, {
-            autoConnect: false,
-            transports: ["websocket"],
-            query: query,
-            auth: { token: token || "" },
-            timeout: 20000,
-            reconnectionAttempts: 6,
-            reconnectionDelay: 2000
-          });
-          state.socket = socket;
+// ---------- account ----------
+async function createNewAccount() {
+  emailEl.textContent = 'Generating your email…';
+  $('statusText').textContent = 'Creating…';
+  hideErr();
+  try {
+    const init = await api({ f: 'get_email_address', lang: 'en' });
+    if (!init.sid_token) throw new Error('No session from server');
+    let addr = init.email_addr;
+    // set a nice random username
+    try {
+      const set = await api({ f: 'set_email_user', email_user: randomUsername(), sid_token: init.sid_token, lang: 'en' });
+      if (set.email_addr) addr = set.email_addr;
+    } catch(e) { /* keep generated address */ }
+    session = { sid_token: init.sid_token, address: addr, createdAt: Date.now() };
+    saveSession();
+    emailEl.textContent = session.address;
+    $('statusText').textContent = 'Active';
+    messages = [];
+    renderMessages();
+    startTimer();
+    toast('New email ready! 🎉');
+    await fetchMessages();
+  } catch (e) {
+    console.error(e);
+    emailEl.textContent = 'Failed — tap "New Email" to retry';
+    $('statusText').textContent = 'Error';
+    showErr('Error: ' + e.message + '. Internet check karo, phir "New Email" dabao. Agar WhatsApp ke andar khola hai to file ko Chrome browser me kholo.');
+    toast('Email banane me error: ' + e.message);
+  }
+}
 
-          socket.on("connect", function () {
-            state.connected = true;
-            setStatus("busy", "Connected — session ready ho raha hai…");
-            bootstrap(false);
-          });
-          socket.on("disconnect", function () {
-            state.connected = false;
-            state.bootstrapped = false;
-            if (state.email) setStatus("busy", "Disconnect — reconnect ho raha hai…");
-          });
-          socket.on("connect_error", function () {
-            state.connected = false;
-            if (!state.email) {
-              el.addr.classList.remove("loading");
-              el.addr.classList.add("failed");
-              el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-              renderList(null);
-            }
-            showError("Ninja Mail server se connect nahi ho paya — internet check karke Retry dabao.");
-          });
-          socket.on("new_message_notify", function () {
-            if (state.email) loadInbox(false);
-          });
-          socket.on("remove_visitor_token", function () { clearToken(); });
-          socket.connect();
-        }
+async function restoreSession() {
+  const saved = loadSession();
+  if (!saved || !saved.sid_token) { await createNewAccount(); return; }
+  session = saved;
+  emailEl.textContent = session.address;
+  $('statusText').textContent = 'Active';
+  startTimer();
+  try { await fetchMessages(); }
+  catch (e) {
+    clearSession();
+    await createNewAccount();
+  }
+}
 
-        // ---------- session bootstrap (restore or create visitor session) ----------
-        function bootstrap(isRetry) {
-          if (state.bootstrapped) return Promise.resolve();
-          state.bootstrapped = true;
-          var token = state.token || loadToken();
-          return emitAck("get_guest_user_data", [{ token: token || null }], 5000).then(function (resp) {
-            if (respError(resp)) throw new Error(respError(resp));
-            hideError();
-            setStatus("ok", "Connected (Ninja Mail)");
-            var active = resp && resp.activeEmail;
-            if (!state.email && active && active.emailAddress && !active.isExpired && !active.isDeleted) {
-              setEmail(active, null);
-              return loadInbox(false);
-            }
-            if (!state.email) return ensureEmail();
-            return loadInbox(false);
-          }).catch(function (err) {
-            state.bootstrapped = false;
-            if (!state.email && !isRetry) {
-              // One silent retry of the bootstrap before showing an error
-              return bootstrap(true);
-            }
-            if (!state.email) {
-              el.addr.classList.remove("loading");
-              el.addr.classList.add("failed");
-              el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-              renderList(null);
-              showError("Ninja Mail session nahi ban paya — internet check karke Retry dabao.");
-            }
-          });
-        }
+// ---------- inbox ----------
+async function fetchMessages() {
+  if (!session || !session.sid_token) return;
+  $('autoText').innerHTML = '<span class="spin">🔄</span> Checking…';
+  try {
+    const data = await api({ f: 'get_email_list', offset: 0, sid_token: session.sid_token });
+    messages = data.list || [];
+    renderMessages();
+  } finally {
+    $('autoText').textContent = 'Auto-refresh: ON (8s)';
+  }
+}
 
-        // ---------- email creation: try @jacob.lat first, else Ninja-generated ----------
-        function localAlias() {
-          var n = NAMES[Math.floor(Math.random() * NAMES.length)];
-          var a = 10 + Math.floor(Math.random() * 90);
-          var b = 100 + Math.floor(Math.random() * 900);
-          return n + a + "_" + b;
-        }
-        function ensureEmail() {
-          state.busy = true;
-          setStatus("busy", "Email ban raha hai…");
-          el.addr.classList.add("loading");
-          if (!state.email) el.addr.textContent = "Email ban raha hai…";
-          return emitAck("generate_email_alias", [], 5000).then(function (resp) {
-            var alias = resp && resp.alias ? String(resp.alias) : localAlias();
-            return emitAck("create_email", [{
-              alias: alias, domain: WANT_DOMAIN, emailType: 1, password: "", captchaToken: ""
-            }], 5000);
-          }).catch(function () {
-            // alias/create transport issue — go straight to generate
-            return null;
-          }).then(function (resp) {
-            if (resp && resp.emailData && resp.emailData.emailAddress) {
-              setEmail(resp.emailData, resp.token || resp.newToken);
-              state.busy = false;
-              hideError();
-              setStatus("ok", "Connected (Ninja Mail)");
-              toast("Naya email ready hai 🎲");
-              return loadInbox(false);
-            }
-            // jacob.lat not available (or rate-limited) — Ninja's own random .lat address
-            return emitAck("generate_temp_mail", [], 5000).then(function (g) {
-              if (g && g.emailData && g.emailData.emailAddress) {
-                setEmail(g.emailData, g.newToken || g.token);
-                state.busy = false;
-                hideError();
-                setStatus("ok", "Connected (Ninja Mail)");
-                toast("Naya email ready hai 🎲");
-                return loadInbox(false);
-              }
-              throw new Error(respError(g) || respError(resp) || "generate_failed");
-            });
-          }).catch(function (err) {
-            state.busy = false;
-            if (!state.email) {
-              el.addr.classList.remove("loading");
-              el.addr.classList.add("failed");
-              el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-              renderList(null);
-            }
-            showError(friendlyError(err && err.message));
-          });
-        }
+function renderMessages() {
+  const unread = messages.filter(m => !m.mail_read).length;
+  $('countText').textContent = messages.length + ' message' + (messages.length === 1 ? '' : 's');
+  const badge = $('unreadBadge');
+  badge.style.display = unread ? 'inline-block' : 'none';
+  badge.textContent = unread;
 
-        function setEmail(emailData, token) {
-          state.email = emailData.emailAddress || emailData.address || null;
-          if (token) saveToken(token);
-          var exp = emailData.expiresAt || emailData.expires_at;
-          state.expiresAtMs = exp ? Date.parse(exp) : (Date.now() + 24 * 3600 * 1000);
-          if (isNaN(state.expiresAtMs)) state.expiresAtMs = Date.now() + 24 * 3600 * 1000;
-          state.knownIds = null;
-          state.mails = [];
-          state.readIds = {};
-          closeReader();
-          setEmailDisplay();
-          updateTimer();
-        }
+  if (!messages.length) {
+    msgListEl.innerHTML = '<div class="empty"><div class="big">📭</div>Waiting for emails…<br>Is address par mail bhejo, yahan aa jayega.</div>';
+    return;
+  }
+  msgListEl.innerHTML = messages.map(m => `
+    <div class="msg ${m.mail_read ? '' : 'unread'}" data-id="${m.mail_id}">
+      <div class="msg-top">
+        <span class="msg-from">${esc(m.mail_from || 'Unknown')}</span>
+        <span class="msg-time">${esc(timeAgo(m))}</span>
+      </div>
+      <div class="msg-subj">${esc(m.mail_subject || '(No subject)')}</div>
+      <div class="msg-snip">${esc((m.mail_excerpt || '').replace(/\s+/g, ' '))}</div>
+    </div>`).join('');
 
-        function setEmailDisplay() {
-          el.addr.classList.remove("loading", "failed");
-          el.addr.textContent = state.email;
-          var domain = state.email && state.email.indexOf("@") > -1 ? state.email.split("@")[1] : "";
-          if (domain && domain !== WANT_DOMAIN) el.domainNote.classList.add("show");
-          else el.domainNote.classList.remove("show");
-        }
+  msgListEl.querySelectorAll('.msg').forEach(el => el.addEventListener('click', () => openMessage(el.dataset.id)));
+}
 
-        function updateTimer() {
-          if (!state.email || !state.expiresAtMs) { el.timer.textContent = "⏱ —"; return; }
-          var remain = Math.floor((state.expiresAtMs - Date.now()) / 1000);
-          if (remain <= 0) {
-            el.timer.textContent = "⏱ Expired";
-            if (!state.busy && state.connected) { toast("Purana email expire — naya ban raha hai 🎲"); ensureEmail(); }
-            return;
-          }
-          var h = Math.floor(remain / 3600), m = Math.floor((remain % 3600) / 60), s = remain % 60;
-          var txt = (h > 0 ? h + ":" : "") + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-          el.timer.textContent = "⏱ " + txt + " left";
-        }
-        setInterval(updateTimer, 1000);
+async function openMessage(id) {
+  try {
+    const m = await api({ f: 'fetch_email', email_id: id, sid_token: session.sid_token });
+    $('vSubject').textContent = m.mail_subject || '(No subject)';
+    $('vMeta').innerHTML =
+      'From: <b>' + esc(m.mail_from || 'Unknown') + '</b><br>' +
+      'To: ' + esc(session.address) + '<br>' +
+      'Date: ' + esc(m.mail_date || '');
 
-        // ---------- inbox ----------
-        function textOf(v) {
-          if (!v) return "";
-          if (typeof v === "string") return v;
-          return v.text || v.name || v.address || "";
-        }
-        function fmtDate(v) {
-          if (!v) return "";
-          var d = new Date(v);
-          if (isNaN(d.getTime())) return String(v);
-          try {
-            return d.toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-          } catch (e) { return d.toString(); }
-        }
-        function renderList(newIds) {
-          el.list.innerHTML = "";
-          el.count.textContent = "✉ " + state.mails.length + (state.mails.length === 1 ? " message" : " messages");
-          el.empty.style.display = state.mails.length ? "none" : "block";
-          if (!state.email) {
-            el.emptyTitle.textContent = "Pehle email banao";
-            el.emptySub.textContent = "Upar \"New Email\" ya Retry dabao — email bante hi inbox yahan ready ho jayega.";
-          } else {
-            el.emptyTitle.textContent = "Waiting for emails…";
-            el.emptySub.textContent = "Is address par mail bhejo, yahan aa jayega. Inbox khud refresh hota rehta hai.";
-          }
-          state.mails.forEach(function (mail) {
-            var li = document.createElement("li");
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "mail-item";
-            var isNew = newIds && newIds[mail.id];
-            var top = document.createElement("div"); top.className = "top";
-            var from = document.createElement("span"); from.className = "from"; from.textContent = textOf(mail.sender) || "(no sender)";
-            var time = document.createElement("span"); time.className = "time"; time.textContent = fmtDate(mail.date);
-            top.appendChild(from); top.appendChild(time);
-            var subj = document.createElement("div"); subj.className = "subj";
-            if (!state.readIds[mail.id]) { var d = document.createElement("span"); d.className = "unread-dot"; subj.appendChild(d); }
-            var st = document.createElement("span"); st.textContent = mail.subject || "(no subject)"; subj.appendChild(st);
-            if (isNew) { var nb = document.createElement("span"); nb.className = "new-badge"; nb.textContent = "NEW"; subj.appendChild(nb); }
-            btn.appendChild(top); btn.appendChild(subj);
-            btn.addEventListener("click", function () { openMail(mail); });
-            li.appendChild(btn);
-            el.list.appendChild(li);
-          });
-        }
+    // --- extract verification codes (4-8 digit numbers) ---
+    const plain = (m.mail_body ? stripHtml(m.mail_body) : '');
+    const codes = [...new Set((plain.match(/(?<!\d)\d{4,8}(?!\d)/g) || []))].slice(0, 5);
+    const box = $('codesBox');
+    if (codes.length) {
+      box.style.display = 'block';
+      $('codesList').innerHTML = codes.map(c =>
+        `<span class="code-chip">${esc(c)} <button data-code="${c}">Copy</button></span>`).join('');
+      $('codesList').querySelectorAll('button').forEach(b =>
+        b.addEventListener('click', ev => { ev.stopPropagation(); copyText(b.dataset.code, 'Code copied: ' + b.dataset.code + ' ✅'); }));
+    } else box.style.display = 'none';
 
-        function loadInbox(isManual) {
-          if (!state.connected || !state.email || state.inboxBusy) return Promise.resolve();
-          state.inboxBusy = true;
-          return emitAck("get_email_messages", [{ messageType: "inbound" }], 60000).then(function (resp) {
-            state.inboxBusy = false;
-            var err = respError(resp);
-            if (err) {
-              if (err === "session_active_email_required" || err === "session_expired") {
-                state.bootstrapped = false;
-                return bootstrap(false);
-              }
-              throw new Error(err);
-            }
-            hideError();
-            setStatus("ok", "Connected (Ninja Mail)");
-            var list = (resp && resp.email_messages) || [];
-            list = list.slice().sort(function (a, b) {
-              return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
-            });
-            var newIds = null;
-            if (state.knownIds !== null) {
-              newIds = {};
-              list.forEach(function (m) { if (!state.knownIds[m.id]) newIds[m.id] = true; });
-              var anyNew = Object.keys(newIds).length > 0;
-              if (anyNew && el.readerCard.hidden) toast("Naya mail aaya hai! 📩");
-              if (!anyNew) newIds = null;
-            }
-            state.knownIds = {};
-            list.forEach(function (m) { state.knownIds[m.id] = true; });
-            state.mails = list;
-            renderList(newIds);
-            if (isManual) toast("Inbox refreshed 🔄");
-          }).catch(function (err) {
-            state.inboxBusy = false;
-            if (isManual) showError(friendlyError(err && err.message));
-          });
-        }
+    const bodyBox = $('bodyBox');
+    bodyBox.innerHTML = '';
+    if (m.mail_body) {
+      const f = document.createElement('iframe');
+      f.setAttribute('sandbox', '');
+      f.srcdoc = m.mail_body;
+      bodyBox.appendChild(f);
+    } else {
+      const pre = document.createElement('pre');
+      pre.textContent = '(Empty message)';
+      bodyBox.appendChild(pre);
+    }
 
-        function newEmail(auto) {
-          if (state.busy || !state.connected) {
-            if (!state.connected) { setStatus("busy", "Connecting…"); connectSocket(); }
-            return;
-          }
-          state.knownIds = null;
-          state.mails = [];
-          closeReader();
-          renderList(null);
-          if (!auto) toast("Naya email ban raha hai…");
-          ensureEmail();
-        }
+    $('viewer').classList.add('open');
+    $('viewer').scrollIntoView({ behavior: 'smooth' });
 
-        function forgetAndNew() {
-          var current = state.email;
-          function proceed() {
-            clearToken();
-            state.email = null;
-            state.knownIds = null;
-            state.mails = [];
-            closeReader();
-            renderList(null);
-            toast("Purana email delete ho gaya 🗑️");
-            if (state.connected) ensureEmail();
-            else connectSocket();
-          }
-          if (current && state.connected) {
-            emitAck("delete_email", [{ emailAddress: current }], 5000)
-              .catch(function () {})
-              .then(proceed);
-          } else { proceed(); }
-        }
+    const local = messages.find(x => x.mail_id === id);
+    if (local) { local.mail_read = 1; renderMessages(); }
+  } catch (e) {
+    toast('Could not open message: ' + e.message);
+  }
+}
 
-        function extractCode(text) {
-          if (!text) return null;
-          var m = text.match(/(?:code|otp|verification|verify|pin|password|one[\s-]*time)[^0-9a-z]{0,40}?(\d{4,8})\b/i);
-          if (m) return m[1];
-          m = text.match(/\b(\d{6})\b/);
-          if (m) return m[1];
-          m = text.match(/\b(\d{4})\b/);
-          if (m) return m[1];
-          return null;
-        }
+// ---------- timer ----------
+function startTimer() {
+  clearInterval(timerInt);
+  const end = session.createdAt + SESSION_MINS * 60 * 1000;
+  const tick = () => {
+    const left = Math.max(0, end - Date.now());
+    const mm = String(Math.floor(left / 60000)).padStart(2, '0');
+    const ss = String(Math.floor(left % 60000 / 1000)).padStart(2, '0');
+    $('timer').textContent = mm + ':' + ss;
+    if (left <= 0) {
+      clearInterval(timerInt);
+      toast('⏰ Email expired — new email bana raha hoon…');
+      deleteAccount(true);
+    }
+  };
+  tick();
+  timerInt = setInterval(tick, 1000);
+}
 
-        function openMail(mail) {
-          el.inboxCard.hidden = true;
-          el.readerCard.hidden = false;
-          el.readerSubject.textContent = mail.subject || "(no subject)";
-          el.readerMeta.textContent = "From: " + textOf(mail.sender) + (mail.date ? "  •  " + fmtDate(mail.date) : "");
-          el.readerBody.textContent = "Loading…";
-          el.otpBox.hidden = true;
-          state.currentOtp = null;
-          state.readIds[mail.id] = true;
-          renderList(null);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          emitAck("get_email_message", [{ messageId: mail.id }], 60000).then(function (resp) {
-            if (respError(resp) || !resp || !resp.emailMessage) {
-              throw new Error(respError(resp) || "message_missing");
-            }
-            var data = resp.emailMessage.data || {};
-            var body = data.content || "";
-            if (data.subject) el.readerSubject.textContent = data.subject;
-            el.readerMeta.textContent = "From: " + (textOf(data.from) || textOf(mail.sender)) +
-              (data.to ? "  •  To: " + textOf(data.to) : "") +
-              (data.date ? "  •  " + fmtDate(data.date) : "");
-            var code = extractCode((data.subject || mail.subject || "") + "\n" + body.replace(/<[^>]*>/g, " "));
-            if (code) {
-              state.currentOtp = code;
-              el.otpCode.textContent = code;
-              el.otpBox.hidden = false;
-            }
-            if (/<[a-z][\s\S]*>/i.test(body)) {
-              el.readerBody.innerHTML = "";
-              var frame = document.createElement("iframe");
-              frame.setAttribute("sandbox", "");
-              frame.srcdoc = body;
-              el.readerBody.appendChild(frame);
-            } else {
-              el.readerBody.textContent = body;
-            }
-          }).catch(function () {
-            el.readerBody.textContent = "Mail body load nahi hua — wapas jaake dobara try karo.";
-          });
-        }
+// ---------- delete ----------
+async function deleteAccount(silent) {
+  if (session && session.sid_token) {
+    try { await api({ f: 'forget_me', sid_token: session.sid_token }); } catch(e) {}
+  }
+  clearInterval(timerInt);
+  clearSession();
+  messages = [];
+  renderMessages();
+  $('viewer').classList.remove('open');
+  if (!silent) toast('Email deleted 🗑️');
+  await createNewAccount();
+}
 
-        function closeReader() {
-          el.readerCard.hidden = true;
-          el.inboxCard.hidden = false;
-        }
+// ---------- events ----------
+$('copyBtn').addEventListener('click', () => {
+  if (session && session.address) copyText(session.address, 'Email copied! ✅');
+});
+$('newBtn').addEventListener('click', async () => {
+  clearInterval(timerInt);
+  if (session && session.sid_token) {
+    try { await api({ f: 'forget_me', sid_token: session.sid_token }); } catch(e) {}
+  }
+  clearSession();
+  $('viewer').classList.remove('open');
+  await createNewAccount();
+});
+$('refreshBtn').addEventListener('click', async () => {
+  try { await fetchMessages(); toast('Inbox refreshed 🔄'); }
+  catch(e) { toast('Refresh failed: ' + e.message); }
+});
+$('deleteBtn').addEventListener('click', () => { if (confirm('Is temporary email ko delete karke new banayen?')) deleteAccount(false); });
+$('closeView').addEventListener('click', () => $('viewer').classList.remove('open'));
 
-        function copyText(text, okMsg) {
-          function done() { toast(okMsg); }
-          function fallback() {
-            var ta = document.createElement("textarea");
-            ta.value = text;
-            ta.style.position = "fixed"; ta.style.opacity = "0";
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand("copy"); done(); }
-            catch (e) { toast("Copy nahi hua — lamba press karke copy karo"); }
-            document.body.removeChild(ta);
-          }
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(done, fallback);
-          } else { fallback(); }
-        }
-
-        el.btnCopy.addEventListener("click", function () {
-          if (state.email) copyText(state.email, "Email copy ho gaya 📋");
-        });
-        el.btnNew.addEventListener("click", function () { newEmail(false); });
-        el.btnDelete.addEventListener("click", forgetAndNew);
-        el.btnRefresh.addEventListener("click", function () {
-          var icon = this.querySelector("svg");
-          if (icon) icon.classList.add("spin");
-          loadInbox(true).then(function () { if (icon) icon.classList.remove("spin"); });
-        });
-        document.getElementById("btnRetry").addEventListener("click", function () {
-          hideError();
-          if (!state.connected) { setStatus("busy", "Connecting…"); connectSocket(); }
-          else if (!state.email) { state.bootstrapped = false; bootstrap(false); }
-          else loadInbox(true);
-        });
-        document.getElementById("btnBack").addEventListener("click", closeReader);
-        document.getElementById("btnCopyOtp").addEventListener("click", function () {
-          if (state.currentOtp) copyText(state.currentOtp, "Code copy ho gaya 🔑");
-        });
-
-        setStatus("busy", "Connecting…");
-        connectSocket();
-        setInterval(function () { if (state.email && state.connected && el.readerCard.hidden) loadInbox(false); }, 8000);
-      })();
-    </script>
-  </body>
+// ---------- start ----------
+restoreSession();
+pollInt = setInterval(() => { if (session && session.sid_token && !document.hidden) fetchMessages().catch(()=>{}); }, 8000);
+</script>
+</body>
 </html>
