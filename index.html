@@ -46,7 +46,7 @@
       .viewer .body { white-space:pre-wrap; word-break:break-word; font-size:15px; line-height:1.55; }
       .viewer iframe { width:100%; border:0; min-height:220px; }
       .foot { text-align:center; color:var(--muted); font-size:13px; margin-top:22px; }
-      .svc { display:flex; gap:8px; margin:0 0 14px; }
+      .svc { display:flex; gap:8px; margin:0 0 14px; flex-wrap:wrap; }
       .svc button { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 4px; font-size:13px; font-weight:700; cursor:pointer; color:#374151; white-space:nowrap; }
       .svc button.on { background:var(--green); border-color:var(--green); color:#fff; }
     </style>
@@ -65,6 +65,7 @@
           <button id="svcKitten">InboxKitten</button>
           <button id="svcMaildrop">Maildrop</button>
           <button id="svcMailcatch">MailCatch</button>
+          <button id="svcGuerrilla">GuerrillaMail</button>
         </div>
         <div class="label">YOUR TEMPORARY EMAIL ADDRESS</div>
         <div class="addr" id="addr">Banaya ja raha hai…</div>
@@ -109,9 +110,12 @@
       const MD_DOMAIN = 'maildrop.cc';
       const MC_API = 'https://mailcatch.com/api';
       const MC_DOMAIN = 'mailcatch.com';
+      const GM_API = 'https://api.guerrillamail.com/ajax.php';
+      const GM_DOMAIN = 'guerrillamail.net';
 
       let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
       let service = 'mail123', otpFetchedFor = null;
+      let gmSid = null;
 
       const $ = (id) => document.getElementById(id);
       function setStatus(ok, text) {
@@ -194,6 +198,18 @@
         const m = html.match(/data-raw-email="([\s\S]*?)"/);
         return m ? decodeEntities(m[1]) : '';
       }
+      async function gmApi(params) {
+        const qs = new URLSearchParams(params).toString();
+        const res = await fetch(GM_API + '?' + qs);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }
+      function gmRandomUser() {
+        const w1 = IK_WORDS1[Math.floor(Math.random() * IK_WORDS1.length)];
+        const w2 = IK_WORDS2[Math.floor(Math.random() * IK_WORDS2.length)];
+        const n = Math.floor(1000 + Math.random() * 9000);
+        return w1 + '.' + w2 + '.' + n;
+      }
       function mdAlias() { return address.split('@')[0]; }
       async function mdQuery(query) {
         const res = await fetch(MD_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
@@ -209,6 +225,7 @@
         $('svcKitten').classList.toggle('on', s === 'kitten');
         $('svcMaildrop').classList.toggle('on', s === 'maildrop');
         $('svcMailcatch').classList.toggle('on', s === 'mailcatch');
+        $('svcGuerrilla').classList.toggle('on', s === 'guerrilla');
         newEmail();
       }
       function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
@@ -250,6 +267,30 @@
           loadInbox();
           return;
         }
+        if (service === 'guerrilla') {
+          if (gmSid) { try { await gmApi({ f: 'forget_me', sid_token: gmSid }); } catch (e) {} }
+          try {
+            const init = await gmApi({ f: 'get_email_address', lang: 'en' });
+            if (!init.sid_token) throw new Error('no session');
+            gmSid = init.sid_token;
+            let addr = init.email_addr;
+            try {
+              const set = await gmApi({ f: 'set_email_user', email_user: gmRandomUser(), sid_token: gmSid, lang: 'en' });
+              if (set.email_addr) addr = set.email_addr;
+            } catch (e) {}
+            // GuerrillaMail ke saare domains (.net, .com, .org...) ek hi inbox ke alias hain — isliye .net dikhate hain
+            address = addr.split('@')[0] + '@' + GM_DOMAIN;
+            $('addr').textContent = address;
+            setStatus(true, 'Connected');
+            startTimer();
+            loadInbox();
+          } catch (e) {
+            $('addr').textContent = 'Failed — "New Email" tap karke retry karo';
+            $('addr').classList.add('err');
+            showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+          }
+          return;
+        }
         try {
           const pickDomain = MAIL123_DOMAINS[Math.floor(Math.random() * MAIL123_DOMAINS.length)];
           const res = await fetch(API + 'mailbox/new?domain=' + encodeURIComponent(pickDomain));
@@ -273,6 +314,7 @@
         if (service === 'kitten') { await loadKittenInbox(); return; }
         if (service === 'maildrop') { await loadMaildropInbox(); return; }
         if (service === 'mailcatch') { await loadMailcatchInbox(); return; }
+        if (service === 'guerrilla') { await loadGuerrillaInbox(); return; }
         try {
           const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages');
           if (res.status === 429) {
@@ -400,6 +442,39 @@
         } catch (e) {}
       }
 
+      async function loadGuerrillaInbox() {
+        if (!gmSid) return;
+        try {
+          const data = await gmApi({ f: 'get_email_list', offset: 0, sid_token: gmSid });
+          hideError();
+          setStatus(true, 'Connected');
+          messages = (data.list || []).map((m) => {
+            return { id: m.mail_id, from: decodeEntities(m.mail_from || ''), subject: decodeEntities(m.mail_subject || '(no subject)'), date: m.mail_timestamp ? m.mail_timestamp * 1000 : '', excerpt: decodeEntities(m.mail_excerpt || '') };
+          }).sort((a, b) => new Date(b.date) - new Date(a.date));
+          $('count').textContent = (data.count != null ? data.count : messages.length);
+          renderInbox();
+          if (messages.length && otpFetchedFor !== messages[0].id) {
+            const code = findCode((messages[0].subject || '') + ' ' + (messages[0].excerpt || ''));
+            if (code) showOtp(code);
+            else {
+              otpFetchedFor = messages[0].id;
+              fetchGuerrillaOtp(messages[0]);
+            }
+          }
+        } catch (e) {
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
+      }
+
+      async function fetchGuerrillaOtp(m) {
+        if (!gmSid) return;
+        try {
+          const msg = await gmApi({ f: 'fetch_email', email_id: m.id, sid_token: gmSid });
+          const code = findCode(stripHtml(msg.mail_body || ''));
+          if (code) showOtp(code);
+        } catch (e) {}
+      }
+
       function renderInbox() {
         const box = $('inbox');
         if (!messages.length) {
@@ -510,6 +585,33 @@
           }
           return;
         }
+        if (service === 'guerrilla') {
+          const m = messages.find((x) => String(x.id) === String(id));
+          if (!m) return;
+          $('vSubj').textContent = m.subject || '(no subject)';
+          $('vMeta').textContent = (m.from || '') + ' • ' + (m.date ? new Date(m.date).toLocaleString() : '');
+          const bodyEl = $('vBody');
+          if (!gmSid) { bodyEl.textContent = '(khali message)'; $('viewer').style.display = 'block'; return; }
+          try {
+            const msg = await gmApi({ f: 'fetch_email', email_id: m.id, sid_token: gmSid });
+            const code = findCode((msg.mail_subject || '') + ' ' + stripHtml(msg.mail_body || ''));
+            if (code) showOtp(code);
+            if (msg.mail_body && /<[a-z][\s\S]*>/i.test(msg.mail_body)) {
+              bodyEl.innerHTML = '';
+              const f = document.createElement('iframe');
+              f.setAttribute('sandbox', '');
+              f.srcdoc = msg.mail_body;
+              bodyEl.appendChild(f);
+            } else {
+              bodyEl.textContent = stripHtml(msg.mail_body || '') || '(khali message)';
+            }
+            $('viewer').style.display = 'block';
+            $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch (e) {
+            showError('Message khol nahi paya — Retry dabao.');
+          }
+          return;
+        }
         try {
           const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages/' + encodeURIComponent(id));
           if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -563,11 +665,13 @@
       $('svcKitten').addEventListener('click', () => switchService('kitten'));
       $('svcMaildrop').addEventListener('click', () => switchService('maildrop'));
       $('svcMailcatch').addEventListener('click', () => switchService('mailcatch'));
-      try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123' || saved === 'maildrop' || saved === 'mailcatch') service = saved; } catch (e) {}
+      $('svcGuerrilla').addEventListener('click', () => switchService('guerrilla'));
+      try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123' || saved === 'maildrop' || saved === 'mailcatch' || saved === 'guerrilla') service = saved; } catch (e) {}
       $('svcMail123').classList.toggle('on', service === 'mail123');
       $('svcKitten').classList.toggle('on', service === 'kitten');
       $('svcMaildrop').classList.toggle('on', service === 'maildrop');
       $('svcMailcatch').classList.toggle('on', service === 'mailcatch');
+      $('svcGuerrilla').classList.toggle('on', service === 'guerrilla');
 
       setInterval(() => { if (address) loadInbox(); }, REFRESH_MS);
       newEmail();
