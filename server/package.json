@@ -1,0 +1,1 @@
+{"dependencies":{"express":"^4.19.2","mailparser":"^3.7.1","smtp-server":"^3.14.0"},"description":"Self-hosted temporary email server — SMTP receiver + REST API + web inbox (2Sec Mail)","engines":{"node":">=18"},"main":"server.js","name":"2sec-mail-server","scripts":{"start":"node server.js"},"version":"1.0.0"}

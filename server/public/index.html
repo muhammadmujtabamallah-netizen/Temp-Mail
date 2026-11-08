@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>2Sec Mail — Free Temporary Email</title>
+    <style>
+      :root { --green:#0b7a4b; --green-dark:#09663f; --pink-bg:#fdecec; --pink-text:#c62f2f; --card:#ffffff; --ink:#111; --muted:#6b7280; --line:#e5e7eb; --dark:#111827; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:#f3f4f6; color:var(--ink); }
+      .wrap { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+      header { display:flex; align-items:center; gap:12px; margin:6px 0 4px; }
+      .logo { width:52px; height:52px; border-radius:14px; background:var(--green); display:flex; align-items:center; justify-content:center; font-size:28px; }
+      h1 { font-size:34px; margin:0; letter-spacing:-.5px; }
+      .sub { color:#374151; font-size:18px; line-height:1.45; margin:10px 0 20px; }
+      .card { background:var(--card); border-radius:20px; padding:20px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+      .label { color:var(--muted); font-size:13px; letter-spacing:2px; font-weight:700; margin:2px 4px 12px; }
+      .addr { background:var(--dark); color:#fff; border-radius:14px; padding:18px 16px; font-size:19px; font-weight:700; word-break:break-all; line-height:1.4; min-height:64px; display:flex; align-items:center; }
+      .addr.err { color:#ffb4b4; }
+      .btn { width:100%; border:0; border-radius:14px; padding:15px; font-size:18px; font-weight:700; cursor:pointer; margin-top:12px; }
+      .btn-green { background:var(--green); color:#fff; }
+      .btn-green:active { background:var(--green-dark); }
+      .row { display:flex; gap:12px; }
+      .row .btn { flex:1; background:#eceff1; color:#111; font-size:17px; }
+      .btn-pink { background:var(--pink-bg); color:var(--pink-text); }
+      .status { display:flex; align-items:center; gap:14px; margin:16px 4px 0; color:#374151; font-size:16px; flex-wrap:wrap; }
+      .dot { width:12px; height:12px; border-radius:50%; background:#dc2626; display:inline-block; }
+      .dot.ok { background:#16a34a; }
+      .errbox { background:var(--pink-bg); color:var(--pink-text); border-radius:14px; padding:16px; margin-top:16px; font-size:17px; line-height:1.5; display:none; }
+      .errbox .btn { width:auto; background:#dc2626; color:#fff; padding:10px 22px; font-size:16px; margin:10px 0 0 8px; display:inline-block; }
+      .otp { background:#e8f5ee; border:1px solid #bfe6cf; color:#0b7a4b; border-radius:12px; padding:12px 14px; margin-top:14px; font-size:16px; display:none; align-items:center; gap:10px; flex-wrap:wrap; }
+      .otp b { font-size:22px; letter-spacing:2px; }
+      .otp button { background:var(--green); color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; }
+      .inbox { margin-top:18px; }
+      .msg { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:10px; cursor:pointer; background:#fff; }
+      .msg.unread { border-color:#9ecdb4; background:#f4fbf7; }
+      .msg .from { font-weight:700; font-size:15px; }
+      .msg .subj { font-size:15px; margin-top:2px; }
+      .msg .date { color:var(--muted); font-size:13px; margin-top:4px; }
+      .empty { color:var(--muted); text-align:center; padding:18px 0 6px; font-size:15px; }
+      .viewer { border:1px solid var(--line); border-radius:14px; padding:16px; margin-top:16px; display:none; background:#fff; }
+      .viewer h3 { margin:0 0 4px; font-size:17px; }
+      .viewer .meta { color:var(--muted); font-size:13px; margin-bottom:10px; }
+      .viewer .body { white-space:pre-wrap; word-break:break-word; font-size:15px; line-height:1.55; }
+      .viewer iframe { width:100%; border:0; min-height:220px; }
+      .foot { text-align:center; color:var(--muted); font-size:13px; margin-top:22px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="logo">✉️</div>
+        <h1>2Sec Mail</h1>
+      </header>
+      <p class="sub">Free temporary email — instant inbox, no signup. Verification codes yahin receive karo!</p>
+
+      <div class="card">
+        <div class="label">YOUR TEMPORARY EMAIL ADDRESS</div>
+        <div class="addr" id="addr">Banaya ja raha hai…</div>
+        <button class="btn btn-green" id="copyBtn">⧉&nbsp; Copy</button>
+        <div class="row">
+          <button class="btn" id="newBtn">🎲&nbsp; New Email</button>
+          <button class="btn" id="refreshBtn">↻&nbsp; Refresh Inbox</button>
+        </div>
+        <button class="btn btn-pink" id="delBtn">🗑&nbsp; Delete &amp; New Banao</button>
+
+        <div class="status">
+          <span><span class="dot" id="dot"></span> <span id="statusText">Connecting…</span></span>
+          <span>⏱ <span id="timer">—</span></span>
+          <span>✉️ <span id="count">0</span> messages</span>
+        </div>
+
+        <div class="errbox" id="errbox">
+          <span id="errText">Server se connect nahi ho paya — internet check karke Retry dabao.</span>
+          <button id="retryBtn">Retry</button>
+        </div>
+
+        <div class="otp" id="otpBox">Verification code: <b id="otpCode"></b> <button id="otpCopy">Copy code</button></div>
+
+        <div class="inbox" id="inbox"></div>
+
+        <div class="viewer" id="viewer">
+          <h3 id="vSubj"></h3>
+          <div class="meta" id="vMeta"></div>
+          <div class="body" id="vBody"></div>
+        </div>
+      </div>
+      <p class="foot">2Sec Mail — fast, free, temporary inbox.</p>
+    </div>
+
+    <script>
+      const API = '/api/v1/';
+      const REFRESH_MS = 8000; // stays under the 10/min read limit
+
+      let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
+
+      const $ = (id) => document.getElementById(id);
+      function setStatus(ok, text) {
+        $('dot').className = 'dot' + (ok ? ' ok' : '');
+        $('statusText').textContent = text;
+      }
+      function showError(msg) {
+        $('errText').textContent = msg;
+        $('errbox').style.display = 'block';
+        setStatus(false, 'Error');
+      }
+      function hideError() { $('errbox').style.display = 'none'; }
+      function findCode(text) {
+        if (!text) return null;
+        const m = String(text).match(/\b(\d{4,8})\b/);
+        return m ? m[1] : null;
+      }
+      function showOtp(code) {
+        if (!code) { $('otpBox').style.display = 'none'; return; }
+        $('otpCode').textContent = code;
+        $('otpBox').style.display = 'flex';
+      }
+      function startTimer() {
+        elapsed = 0;
+        if (timer) clearInterval(timer);
+        timer = setInterval(() => {
+          elapsed++;
+          const m = Math.floor(elapsed / 60), s = elapsed % 60;
+          $('timer').textContent = m + ':' + String(s).padStart(2, '0');
+        }, 1000);
+      }
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
+      function msgDate(m) { return m.date || m.received_at || m.created_at || m.timestamp || ''; }
+      function msgId(m) { return m.id || m.message_id || m.uid; }
+
+      async function newEmail() {
+        $('addr').textContent = 'Banaya ja raha hai…';
+        $('addr').classList.remove('err');
+        messages = []; seenIds = new Set();
+        $('inbox').innerHTML = '';
+        $('viewer').style.display = 'none';
+        showOtp(null);
+        $('count').textContent = '0';
+        hideError();
+        setStatus(false, 'Connecting…');
+        try {
+          const res = await fetch(API + 'mailbox/new');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          if (!data.address) throw new Error('no address');
+          address = data.address;
+          $('addr').textContent = address;
+          setStatus(true, 'Connected');
+          startTimer();
+          loadInbox();
+        } catch (e) {
+          $('addr').textContent = 'Failed — "New Email" tap karke retry karo';
+          $('addr').classList.add('err');
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
+      }
+
+      async function loadInbox() {
+        if (!address || Date.now() < pausedUntil) return;
+        try {
+          const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages');
+          if (res.status === 429) {
+            pausedUntil = Date.now() + 60000;
+            showError('Limit poori ho gayi — 1 minute ruk ke Retry dabao.');
+            return;
+          }
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          hideError();
+          setStatus(true, 'Connected');
+          messages = Array.isArray(data.messages) ? data.messages : [];
+          $('count').textContent = (data.count != null ? data.count : messages.length);
+          renderInbox();
+          const withOtp = messages.find((m) => m.otp_code);
+          if (withOtp) showOtp(withOtp.otp_code);
+          else if (messages.length) {
+            const code = findCode((messages[0].subject || '') + ' ' + (messages[0].preview || messages[0].snippet || ''));
+            if (code) showOtp(code);
+          }
+        } catch (e) {
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
+      }
+
+      function renderInbox() {
+        const box = $('inbox');
+        if (!messages.length) {
+          box.innerHTML = '<div class="empty">Inbox khali hai — yahan verification code ayega.</div>';
+          return;
+        }
+        box.innerHTML = messages.map((m) => {
+          const id = msgId(m);
+          const unread = seenIds.has(id) ? '' : ' unread';
+          const d = new Date(msgDate(m));
+          return '<div class="msg' + unread + '" data-id="' + escapeHtml(id) + '">' +
+            '<div class="from">' + escapeHtml(msgFrom(m)) + '</div>' +
+            '<div class="subj">' + escapeHtml(m.subject || '(no subject)') + '</div>' +
+            '<div class="date">' + (isNaN(d) ? escapeHtml(msgDate(m)) : d.toLocaleString()) + '</div></div>';
+        }).join('');
+        box.querySelectorAll('.msg').forEach((el) => {
+          el.addEventListener('click', () => openMessage(el.getAttribute('data-id')));
+        });
+      }
+
+      async function openMessage(id) {
+        seenIds.add(id);
+        renderInbox();
+        try {
+          const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages/' + encodeURIComponent(id));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const m = data.message || data.data || data;
+          $('vSubj').textContent = m.subject || '(no subject)';
+          $('vMeta').textContent = msgFrom(m) + ' • ' + msgDate(m);
+          const bodyEl = $('vBody');
+          const text = m.text || m.textBody || m.body_text || m.plain || '';
+          const html = m.html || m.htmlBody || m.body_html || m.body || '';
+          const code = m.otp_code || findCode((m.subject || '') + ' ' + text);
+          if (code) showOtp(code);
+          if (html && /<[a-z][\s\S]*>/i.test(html)) {
+            bodyEl.innerHTML = '';
+            const f = document.createElement('iframe');
+            f.setAttribute('sandbox', '');
+            f.srcdoc = html;
+            bodyEl.appendChild(f);
+          } else {
+            bodyEl.textContent = text || html || '(khali message)';
+          }
+          $('viewer').style.display = 'block';
+          $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {
+          showError('Message khol nahi paya — Retry dabao.');
+        }
+      }
+
+      function copyText(t, btn) {
+        const done = () => { if (btn) { const old = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = old; }, 1200); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done));
+        } else fallbackCopy(t, done);
+      }
+      function fallbackCopy(t, done) {
+        const ta = document.createElement('textarea');
+        ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+
+      $('copyBtn').addEventListener('click', (e) => copyText(address, e.currentTarget));
+      $('newBtn').addEventListener('click', newEmail);
+      $('delBtn').addEventListener('click', newEmail);
+      $('refreshBtn').addEventListener('click', loadInbox);
+      $('retryBtn').addEventListener('click', () => { hideError(); if (!address) newEmail(); else loadInbox(); });
+      $('otpCopy').addEventListener('click', (e) => copyText($('otpCode').textContent, e.currentTarget));
+
+      setInterval(() => { if (address) loadInbox(); }, REFRESH_MS);
+      newEmail();
+    </script>
+  </body>
+</html>
