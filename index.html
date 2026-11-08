@@ -46,6 +46,9 @@
       .viewer .body { white-space:pre-wrap; word-break:break-word; font-size:15px; line-height:1.55; }
       .viewer iframe { width:100%; border:0; min-height:220px; }
       .foot { text-align:center; color:var(--muted); font-size:13px; margin-top:22px; }
+      .svc { display:flex; gap:8px; margin:0 0 14px; }
+      .svc button { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px; font-size:15px; font-weight:700; cursor:pointer; color:#374151; }
+      .svc button.on { background:var(--green); border-color:var(--green); color:#fff; }
     </style>
   </head>
   <body>
@@ -57,6 +60,10 @@
       <p class="sub">Free temporary email — instant inbox, no signup. Verification codes yahin receive karo!</p>
 
       <div class="card">
+        <div class="svc">
+          <button id="svcMail123" class="on">mail123</button>
+          <button id="svcKitten">InboxKitten</button>
+        </div>
         <div class="label">YOUR TEMPORARY EMAIL ADDRESS</div>
         <div class="addr" id="addr">Banaya ja raha hai…</div>
         <button class="btn btn-green" id="copyBtn">⧉&nbsp; Copy</button>
@@ -94,8 +101,11 @@
       const API = 'https://mail123.fr/api/v1/';
       const FR_COM_DOMAINS = ['mail123.fr', 'mail456.fr', 'mail789.fr', 'mail1mail.com', 'mail123.com.br'];
       const REFRESH_MS = 8000; // stays under the 10/min read limit
+      const IK_API = 'https://inboxkitten.com/api/v1/mail';
+      const IK_DOMAIN = 'inboxkitten.com';
 
       let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
+      let service = 'mail123', otpFetchedFor = null;
 
       const $ = (id) => document.getElementById(id);
       function setStatus(ok, text) {
@@ -130,6 +140,26 @@
       function escapeHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       }
+      function stripHtml(html) {
+        const d = document.createElement('div');
+        d.innerHTML = html;
+        return d.textContent || '';
+      }
+      const IK_WORDS1 = ['bright', 'happy', 'cool', 'fast', 'lucky', 'sunny', 'blue', 'green', 'gold', 'star', 'moon', 'sky', 'tiger', 'eagle', 'lion', 'wolf', 'fox', 'hawk', 'river', 'ocean', 'forest', 'silver', 'red', 'swift', 'calm'];
+      const IK_WORDS2 = ['chat', 'mail', 'box', 'cat', 'dog', 'fish', 'bird', 'tree', 'rock', 'star', 'moon', 'sun', 'wave', 'wind', 'fire', 'ice', 'rain', 'snow', 'leaf', 'wolf', 'fox', 'hawk'];
+      function kittenAddress() {
+        const w1 = IK_WORDS1[Math.floor(Math.random() * IK_WORDS1.length)];
+        const w2 = IK_WORDS2[Math.floor(Math.random() * IK_WORDS2.length)];
+        const n = Math.random().toString(36).slice(2, 6);
+        return w1 + '-' + w2 + '-' + n + '@' + IK_DOMAIN;
+      }
+      function switchService(s) {
+        service = s;
+        try { localStorage.setItem('twosec-service', s); } catch (e) {}
+        $('svcMail123').classList.toggle('on', s === 'mail123');
+        $('svcKitten').classList.toggle('on', s === 'kitten');
+        newEmail();
+      }
       function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
       function msgDate(m) { return m.date || m.received_at || m.created_at || m.timestamp || ''; }
       function msgId(m) { return m.id || m.message_id || m.uid; }
@@ -144,6 +174,15 @@
         $('count').textContent = '0';
         hideError();
         setStatus(false, 'Connecting…');
+        otpFetchedFor = null;
+        if (service === 'kitten') {
+          address = kittenAddress();
+          $('addr').textContent = address;
+          setStatus(true, 'Connected');
+          startTimer();
+          loadInbox();
+          return;
+        }
         try {
           const pickDomain = FR_COM_DOMAINS[Math.floor(Math.random() * FR_COM_DOMAINS.length)];
           const res = await fetch(API + 'mailbox/new?domain=' + encodeURIComponent(pickDomain));
@@ -164,6 +203,7 @@
 
       async function loadInbox() {
         if (!address || Date.now() < pausedUntil) return;
+        if (service === 'kitten') { await loadKittenInbox(); return; }
         try {
           const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages');
           if (res.status === 429) {
@@ -189,6 +229,43 @@
         }
       }
 
+      async function loadKittenInbox() {
+        try {
+          const res = await fetch(IK_API + '/list?recipient=' + encodeURIComponent(address));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          hideError();
+          setStatus(true, 'Connected');
+          messages = (Array.isArray(data) ? data : []).map((m) => {
+            const h = (m.message && m.message.headers) || {};
+            return { id: m.id, from: h.from || '', subject: h.subject || '(no subject)', date: m.timestamp ? m.timestamp * 1000 : '', storage: m.storage || null };
+          }).sort((a, b) => new Date(b.date) - new Date(a.date));
+          $('count').textContent = messages.length;
+          renderInbox();
+          if (messages.length && otpFetchedFor !== messages[0].id) {
+            const code = findCode(messages[0].subject || '');
+            if (code) showOtp(code);
+            else {
+              otpFetchedFor = messages[0].id;
+              fetchKittenOtp(messages[0]);
+            }
+          }
+        } catch (e) {
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
+      }
+
+      async function fetchKittenOtp(m) {
+        if (!m.storage) return;
+        try {
+          const res = await fetch(IK_API + '/getHtml?region=' + encodeURIComponent(m.storage.region) + '&key=' + encodeURIComponent(m.storage.key));
+          if (!res.ok) return;
+          const html = await res.text();
+          const code = findCode(stripHtml(html));
+          if (code) showOtp(code);
+        } catch (e) {}
+      }
+
       function renderInbox() {
         const box = $('inbox');
         if (!messages.length) {
@@ -212,6 +289,35 @@
       async function openMessage(id) {
         seenIds.add(id);
         renderInbox();
+        if (service === 'kitten') {
+          const m = messages.find((x) => String(x.id) === String(id));
+          if (!m) return;
+          $('vSubj').textContent = m.subject || '(no subject)';
+          $('vMeta').textContent = (m.from || '') + ' • ' + (m.date ? new Date(m.date).toLocaleString() : '');
+          const bodyEl = $('vBody');
+          if (!m.storage) {
+            bodyEl.textContent = '(khali message)';
+            $('viewer').style.display = 'block';
+            return;
+          }
+          try {
+            const res = await fetch(IK_API + '/getHtml?region=' + encodeURIComponent(m.storage.region) + '&key=' + encodeURIComponent(m.storage.key));
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const html = await res.text();
+            const code = findCode(stripHtml(html));
+            if (code) showOtp(code);
+            bodyEl.innerHTML = '';
+            const f = document.createElement('iframe');
+            f.setAttribute('sandbox', '');
+            f.srcdoc = html;
+            bodyEl.appendChild(f);
+            $('viewer').style.display = 'block';
+            $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch (e) {
+            showError('Message khol nahi paya — Retry dabao.');
+          }
+          return;
+        }
         try {
           const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages/' + encodeURIComponent(id));
           if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -260,6 +366,12 @@
       $('refreshBtn').addEventListener('click', loadInbox);
       $('retryBtn').addEventListener('click', () => { hideError(); if (!address) newEmail(); else loadInbox(); });
       $('otpCopy').addEventListener('click', (e) => copyText($('otpCode').textContent, e.currentTarget));
+
+      $('svcMail123').addEventListener('click', () => switchService('mail123'));
+      $('svcKitten').addEventListener('click', () => switchService('kitten'));
+      try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123') service = saved; } catch (e) {}
+      $('svcMail123').classList.toggle('on', service === 'mail123');
+      $('svcKitten').classList.toggle('on', service === 'kitten');
 
       setInterval(() => { if (address) loadInbox(); }, REFRESH_MS);
       newEmail();
