@@ -130,7 +130,13 @@
       function hideError() { $('errbox').style.display = 'none'; }
       function findCode(text) {
         if (!text) return null;
-        const m = String(text).match(/\b(\d{4,8})\b/);
+        let t = String(text);
+        if (address) {
+          const user = address.split('@')[0];
+          t = t.split(address).join(' ');
+          if (user) t = t.split(user).join(' ');
+        }
+        const m = t.match(/\b(\d{4,8})\b/);
         return m ? m[1] : null;
       }
       function showOtp(code) {
@@ -451,7 +457,7 @@
           messages = (data.list || []).map((m) => {
             return { id: m.mail_id, from: decodeEntities(m.mail_from || ''), subject: decodeEntities(m.mail_subject || '(no subject)'), date: m.mail_timestamp ? m.mail_timestamp * 1000 : '', excerpt: decodeEntities(m.mail_excerpt || '') };
           }).sort((a, b) => new Date(b.date) - new Date(a.date));
-          $('count').textContent = (data.count != null ? data.count : messages.length);
+          $('count').textContent = messages.length;
           renderInbox();
           if (messages.length && otpFetchedFor !== messages[0].id) {
             const code = findCode((messages[0].subject || '') + ' ' + (messages[0].excerpt || ''));
