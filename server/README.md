@@ -53,11 +53,21 @@ pm2 save
 
 - Port **25** (SMTP — email receive karne ke liye) — khula hona chahiye.
   Kuch providers port 25 block karte hain — unse unblock karwana padega.
-- Port **3000** (website + API) — ya Nginx se port 80 pe proxy kar lo.
+- Port **5000** (website + API) — ya Nginx se port 80 pe proxy kar lo.
+
+## Hosting files (one-click deploy)
+
+- `Dockerfile` — `docker build -t 2secmail . && docker run -p 5000:5000 -p 25:25 2secmail`
+- `docker-compose.yml` — `docker compose up -d` (VPS pe)
+- `render.yaml` — Render.com pe Blueprint deploy (sirf website + API online hogi)
+
+> Dhyaan do: Render / Netlify / Vercel jaise free hosts **port 25 nahi dete**,
+> isliye wahan website to online ho jayegi lekin **real email nahi ayega**.
+> Email receive karne ke liye VPS hi chahiye (port 25 ke saath).
 
 ## Kya milega
 
-- Website: `http://tumhari-domain:3000/` (ya Nginx ke saath `https://tumhari-domain/`)
+- Website: `http://tumhari-domain:5000/` (ya Nginx ke saath `https://tumhari-domain/`)
 - Email: `kuch-bhi@tumhari-domain` — jo bhi naam banao, inbox me ayega.
 - API: mail123 jaisi hi — `/api/v1/mailbox/new`, `/api/v1/mailbox/{address}/messages`
 
@@ -66,10 +76,10 @@ pm2 save
 ```bash
 cd server
 npm install
-MAIL_DOMAIN=test.local HTTP_PORT=3000 SMTP_PORT=2525 node server.js
+MAIL_DOMAIN=test.local HTTP_PORT=5000 SMTP_PORT=2525 node server.js
 # Doosri terminal me test mail bhejo:
 node -e "const n=require('nodemailer');(async()=>{let t=n.createTransport({host:'127.0.0.1',port:2525,secure:false,tls:{rejectUnauthorized:false}});await t.sendMail({from:'a@b.com',to:'hello@test.local',subject:'Test 123456',text:'code 123456'});console.log('sent')})()"
-curl http://127.0.0.1:3000/api/v1/mailbox/hello@test.local/messages
+curl http://127.0.0.1:5000/api/v1/mailbox/hello@test.local/messages
 ```
 
 ## Files

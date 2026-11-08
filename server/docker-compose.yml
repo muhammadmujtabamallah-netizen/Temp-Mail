@@ -1,0 +1,11 @@
+services:
+  mail:
+    build: .
+    environment:
+      - MAIL_DOMAIN=${MAIL_DOMAIN:-example.com}
+      - HTTP_PORT=5000
+      - SMTP_PORT=25
+    ports:
+      - "5000:5000"
+      - "25:25"
+    restart: unless-stopped

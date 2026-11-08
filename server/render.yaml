@@ -1,0 +1,17 @@
+# Render.com one-click deploy (Blueprint).
+# NOTE: Render can host the WEBSITE + API, but it does NOT expose SMTP
+# port 25, so real email will NOT arrive here. Receiving real email
+# needs a VPS with port 25 open (see README.md).
+services:
+  - type: web
+    name: 2sec-mail
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MAIL_DOMAIN
+        value: example.com
+      - key: HTTP_PORT
+        value: 5000
+      - key: SMTP_PORT
+        value: 25

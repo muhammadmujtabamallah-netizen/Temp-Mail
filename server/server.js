@@ -23,7 +23,7 @@ const { simpleParser } = require('mailparser');
 
 // ---- config (env vars, with defaults) ----
 const MAIL_DOMAIN = (process.env.MAIL_DOMAIN || 'example.com').toLowerCase();
-const HTTP_PORT = parseInt(process.env.HTTP_PORT || '3000', 10);
+const HTTP_PORT = parseInt(process.env.HTTP_PORT || '5000', 10);
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '25', 10);
 
 // ---- tiny .env loader (no dependency) ----
