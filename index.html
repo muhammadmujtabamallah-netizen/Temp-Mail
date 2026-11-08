@@ -92,6 +92,7 @@
 
     <script>
       const API = 'https://mail123.fr/api/v1/';
+      const FR_COM_DOMAINS = ['mail123.fr', 'mail456.fr', 'mail789.fr', 'mail1mail.com', 'mail123.com.br'];
       const REFRESH_MS = 8000; // stays under the 10/min read limit
 
       let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
@@ -144,7 +145,8 @@
         hideError();
         setStatus(false, 'Connecting…');
         try {
-          const res = await fetch(API + 'mailbox/new');
+          const pickDomain = FR_COM_DOMAINS[Math.floor(Math.random() * FR_COM_DOMAINS.length)];
+          const res = await fetch(API + 'mailbox/new?domain=' + encodeURIComponent(pickDomain));
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
           if (!data.address) throw new Error('no address');
