@@ -5,821 +5,264 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
-    <title>TempMail — Free Temporary Email</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <title>2Sec Mail — Free Temporary Email</title>
     <style>
-      :root {
-        --bg: #f4f6f5;
-        --surface: #ffffff;
-        --surface-2: #eef1ef;
-        --ink: #131a17;
-        --ink-2: #4c5a54;
-        --ink-3: #7d8b85;
-        --line: #dde3e0;
-        --accent: #0b7a55;
-        --accent-strong: #095f42;
-        --accent-soft: #e2f3ec;
-        --danger: #c0392b;
-        --danger-soft: #fbeae8;
-        --warn: #9a6a00;
-        --warn-soft: #fdf3d7;
-        --code-bg: #131a17;
-        --code-ink: #7be3b8;
-        --shadow: 0 10px 30px rgba(19, 26, 23, 0.08);
-        color-scheme: light;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0e1210;
-          --surface: #171d1a;
-          --surface-2: #1f2724;
-          --ink: #eef3f1;
-          --ink-2: #a9bab3;
-          --ink-3: #72827b;
-          --line: #2a342f;
-          --accent: #2fbf8f;
-          --accent-strong: #4ad3a3;
-          --accent-soft: #173028;
-          --danger: #ff8a7a;
-          --danger-soft: #3a201c;
-          --warn: #f2c94c;
-          --warn-soft: #332a12;
-          --code-bg: #050807;
-          --code-ink: #7be3b8;
-          --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-          color-scheme: dark;
-        }
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; }
-      body {
-        background: var(--bg);
-        color: var(--ink);
-        font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-        -webkit-font-smoothing: antialiased;
-        line-height: 1.5;
-      }
-      .wrap { max-width: 660px; margin: 0 auto; padding: 28px 16px 56px; }
-
-      header.hero { text-align: left; margin-bottom: 22px; }
-      header.hero h1 {
-        font-size: 34px; font-weight: 800; letter-spacing: -0.02em;
-        margin: 0 0 6px; display: flex; align-items: center; gap: 10px;
-      }
-      header.hero h1 .logo {
-        width: 42px; height: 42px; flex: none; display: grid; place-items: center;
-        background: var(--accent); border-radius: 12px; color: #fff;
-      }
-      header.hero p { margin: 0; color: var(--ink-2); font-size: 16px; font-weight: 600; }
-
-      .card {
-        background: var(--surface); border: 1px solid var(--line);
-        border-radius: 18px; box-shadow: var(--shadow); padding: 20px;
-        margin-bottom: 18px;
-      }
-      .card-label {
-        font-size: 12px; font-weight: 800; letter-spacing: 0.09em;
-        text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px;
-      }
-
-      .email-box {
-        background: var(--code-bg); border-radius: 12px; padding: 16px;
-        display: flex; align-items: center; gap: 10px;
-      }
-      .email-addr {
-        font-family: "JetBrains Mono", ui-monospace, monospace;
-        font-size: 17px; font-weight: 700; color: var(--code-ink);
-        word-break: break-all; flex: 1; min-width: 0;
-      }
-      .email-addr.loading { color: var(--ink-3); font-family: "Manrope", sans-serif; font-size: 15px; font-weight: 700; }
-      .email-addr.failed { color: #ff9d8a; font-family: "Manrope", sans-serif; font-size: 15px; font-weight: 700; }
-      .domain-note {
-        display: none; margin: 12px 0 0; font-size: 13px; font-weight: 600;
-        color: var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 10px 12px;
-      }
-      .domain-note.show { display: block; }
-
-      .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-      button {
-        font-family: inherit; font-weight: 800; font-size: 15px;
-        border-radius: 12px; border: 1px solid transparent; cursor: pointer;
-        padding: 13px 18px; display: inline-flex; align-items: center; gap: 8px;
-        transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
-      }
-      button:active { transform: scale(0.97); }
-      button:disabled { opacity: 0.55; cursor: wait; }
-      .btn-primary { background: var(--accent); color: #fff; flex: 1 1 150px; justify-content: center; }
-      .btn-primary:hover { background: var(--accent-strong); }
-      .btn-ghost { background: var(--surface-2); color: var(--ink); border-color: var(--line); flex: 1 1 130px; justify-content: center; }
-      .btn-ghost:hover { border-color: var(--ink-3); }
-      .btn-danger { background: var(--danger-soft); color: var(--danger); width: 100%; justify-content: center; margin-top: 10px; }
-      .btn-danger:hover { filter: brightness(0.97); }
-
-      .status-row {
-        display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px;
-        font-size: 14px; font-weight: 700; color: var(--ink-2);
-      }
-      .status-row .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: 1px; }
-      .dot.ok { background: var(--accent); }
-      .dot.err { background: var(--danger); }
-      .dot.busy { background: var(--warn); }
-
-      .inbox-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-      .inbox-head h2 { font-size: 21px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
-      .inbox-head .auto { font-size: 13px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
-
-      .mail-list { list-style: none; margin: 0; padding: 0; }
-      .mail-item {
-        width: 100%; text-align: left; background: transparent; border: none;
-        border-top: 1px solid var(--line); padding: 14px 6px; border-radius: 0;
-        display: block; cursor: pointer; color: var(--ink);
-      }
-      .mail-item:hover { background: var(--surface-2); }
-      .mail-item .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-      .mail-item .from { font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .mail-item .time { font-size: 12px; font-weight: 700; color: var(--ink-3); white-space: nowrap; }
-      .mail-item .subj { font-weight: 700; font-size: 14px; color: var(--ink); margin-top: 2px; display: flex; align-items: center; gap: 7px; }
-      .mail-item .excerpt { font-size: 13px; color: var(--ink-2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-      .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
-      .new-badge { background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 99px; letter-spacing: 0.05em; }
-
-      .empty {
-        text-align: center; padding: 34px 12px 26px; color: var(--ink-2);
-      }
-      .empty .big { font-size: 40px; line-height: 1; margin-bottom: 10px; }
-      .empty p { margin: 0; font-weight: 700; font-size: 15px; }
-      .empty p.sub { font-weight: 600; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
-
-      .reader-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-      .btn-back { background: var(--surface-2); color: var(--ink); border-color: var(--line); padding: 9px 14px; font-size: 14px; }
-      .reader h3 { font-size: 19px; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.01em; }
-      .reader .meta { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 14px; word-break: break-all; }
-      .otp-box {
-        background: var(--accent-soft); border: 1.5px dashed var(--accent);
-        border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-      }
-      .otp-box .lbl { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-strong); }
-      .otp-box .code {
-        font-family: "JetBrains Mono", monospace; font-size: 30px; font-weight: 700;
-        letter-spacing: 0.18em; color: var(--ink); line-height: 1.1;
-      }
-      .otp-box button { background: var(--accent); color: #fff; padding: 10px 16px; font-size: 14px; }
-      .mail-body {
-        font-size: 15px; line-height: 1.65; color: var(--ink);
-        white-space: pre-wrap; word-break: break-word;
-        background: var(--surface-2); border-radius: 12px; padding: 16px;
-        max-height: 520px; overflow: auto;
-      }
-      .mail-body iframe { width: 100%; height: 420px; border: none; background: #fff; border-radius: 8px; }
-
-      .steps { display: grid; gap: 12px; }
-      @media (min-width: 560px) { .steps { grid-template-columns: repeat(3, 1fr); } }
-      .step { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-      .step .n {
-        width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft);
-        color: var(--accent-strong); font-weight: 800; font-size: 14px;
-        display: grid; place-items: center; margin-bottom: 8px;
-      }
-      .step p { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink-2); }
-      .step p b { color: var(--ink); }
-
-      .note {
-        font-size: 13px; font-weight: 600; color: var(--warn);
-        background: var(--warn-soft); border-radius: 12px; padding: 12px 14px; margin-top: 18px;
-      }
-      .err-banner {
-        display: none; background: var(--danger-soft); color: var(--danger);
-        border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 700; margin-top: 14px;
-      }
-      .err-banner.show { display: block; }
-      .err-banner button { background: var(--danger); color: #fff; padding: 7px 14px; font-size: 13px; margin-left: 8px; border-radius: 8px; }
-
-      #toast {
-        position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
-        background: var(--ink); color: var(--bg); font-weight: 800; font-size: 14px;
-        padding: 12px 20px; border-radius: 99px; opacity: 0; pointer-events: none;
-        transition: opacity 0.25s ease, transform 0.25s ease; z-index: 50;
-        max-width: calc(100vw - 32px); text-align: center;
-        box-shadow: 0 12px 32px rgba(0,0,0,0.25);
-      }
-      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-      .spin { display: inline-block; animation: sp 0.9s linear infinite; }
-      @keyframes sp { to { transform: rotate(360deg); } }
-      @media (prefers-reduced-motion: reduce) { .spin { animation: none; } button { transition: none; } }
+      :root { --green:#0b7a4b; --green-dark:#09663f; --pink-bg:#fdecec; --pink-text:#c62f2f; --card:#ffffff; --ink:#111; --muted:#6b7280; --line:#e5e7eb; --dark:#111827; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:#f3f4f6; color:var(--ink); }
+      .wrap { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+      header { display:flex; align-items:center; gap:12px; margin:6px 0 4px; }
+      .logo { width:52px; height:52px; border-radius:14px; background:var(--green); display:flex; align-items:center; justify-content:center; font-size:28px; }
+      h1 { font-size:34px; margin:0; letter-spacing:-.5px; }
+      .sub { color:#374151; font-size:18px; line-height:1.45; margin:10px 0 20px; }
+      .card { background:var(--card); border-radius:20px; padding:20px 16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+      .label { color:var(--muted); font-size:13px; letter-spacing:2px; font-weight:700; margin:2px 4px 12px; }
+      .addr { background:var(--dark); color:#fff; border-radius:14px; padding:18px 16px; font-size:19px; font-weight:700; word-break:break-all; line-height:1.4; min-height:64px; display:flex; align-items:center; }
+      .addr.err { color:#ffb4b4; }
+      .btn { width:100%; border:0; border-radius:14px; padding:15px; font-size:18px; font-weight:700; cursor:pointer; margin-top:12px; }
+      .btn-green { background:var(--green); color:#fff; }
+      .btn-green:active { background:var(--green-dark); }
+      .row { display:flex; gap:12px; }
+      .row .btn { flex:1; background:#eceff1; color:#111; font-size:17px; }
+      .btn-pink { background:var(--pink-bg); color:var(--pink-text); }
+      .status { display:flex; align-items:center; gap:14px; margin:16px 4px 0; color:#374151; font-size:16px; flex-wrap:wrap; }
+      .dot { width:12px; height:12px; border-radius:50%; background:#dc2626; display:inline-block; }
+      .dot.ok { background:#16a34a; }
+      .errbox { background:var(--pink-bg); color:var(--pink-text); border-radius:14px; padding:16px; margin-top:16px; font-size:17px; line-height:1.5; display:none; }
+      .errbox .btn { width:auto; background:#dc2626; color:#fff; padding:10px 22px; font-size:16px; margin:10px 0 0 8px; display:inline-block; }
+      .otp { background:#e8f5ee; border:1px solid #bfe6cf; color:#0b7a4b; border-radius:12px; padding:12px 14px; margin-top:14px; font-size:16px; display:none; align-items:center; gap:10px; flex-wrap:wrap; }
+      .otp b { font-size:22px; letter-spacing:2px; }
+      .otp button { background:var(--green); color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; }
+      .inbox { margin-top:18px; }
+      .msg { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:10px; cursor:pointer; background:#fff; }
+      .msg.unread { border-color:#9ecdb4; background:#f4fbf7; }
+      .msg .from { font-weight:700; font-size:15px; }
+      .msg .subj { font-size:15px; margin-top:2px; }
+      .msg .date { color:var(--muted); font-size:13px; margin-top:4px; }
+      .empty { color:var(--muted); text-align:center; padding:18px 0 6px; font-size:15px; }
+      .viewer { border:1px solid var(--line); border-radius:14px; padding:16px; margin-top:16px; display:none; background:#fff; }
+      .viewer h3 { margin:0 0 4px; font-size:17px; }
+      .viewer .meta { color:var(--muted); font-size:13px; margin-bottom:10px; }
+      .viewer .body { white-space:pre-wrap; word-break:break-word; font-size:15px; line-height:1.55; }
+      .viewer iframe { width:100%; border:0; min-height:220px; }
+      .foot { text-align:center; color:var(--muted); font-size:13px; margin-top:22px; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <header class="hero">
-        <h1>
-          <span class="logo" aria-hidden="true">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-          </span>
-          TempMail
-        </h1>
-        <p>Free temporary email — instant inbox, no signup. Verification codes yahin receive karo!</p>
+      <header>
+        <div class="logo">✉️</div>
+        <h1>2Sec Mail</h1>
       </header>
+      <p class="sub">Free temporary email — instant inbox, no signup. Verification codes yahin receive karo!</p>
 
-      <!-- Email card -->
-      <section class="card" aria-label="Your temporary email">
-        <p class="card-label">Your temporary email address</p>
-        <div class="email-box">
-          <span class="email-addr loading" id="emailAddr">Email ban raha hai…</span>
+      <div class="card">
+        <div class="label">YOUR TEMPORARY EMAIL ADDRESS</div>
+        <div class="addr" id="addr">Banaya ja raha hai…</div>
+        <button class="btn btn-green" id="copyBtn">⧉&nbsp; Copy</button>
+        <div class="row">
+          <button class="btn" id="newBtn">🎲&nbsp; New Email</button>
+          <button class="btn" id="refreshBtn">↻&nbsp; Refresh Inbox</button>
         </div>
-        <p class="domain-note" id="domainNote">ℹ️ Note: @jacob.lat domain abhi Ninja Mail par available nahi hai, is liye Ninja ne ye .lat domain diya hai — mails isi address par aayenge, bilkul waisa hi kaam karega.</p>
-        <div class="btn-row">
-          <button class="btn-primary" id="btnCopy" type="button">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copy
-          </button>
-          <button class="btn-ghost" id="btnNew" type="button">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg>
-            New Email
-          </button>
-          <button class="btn-ghost" id="btnRefresh" type="button">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-            Refresh Inbox
-          </button>
-        </div>
-        <button class="btn-danger" id="btnDelete" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-          Delete &amp; New Banao
-        </button>
-        <div class="status-row">
-          <span><span class="dot busy" id="statusDot"></span><span id="statusText">Connecting…</span></span>
-          <span id="timerText">⏱ —</span>
-          <span id="countText">✉ 0 messages</span>
-        </div>
-        <div class="err-banner" id="errBanner">
-          <span id="errText">Connection fail ho gaya.</span>
-          <button type="button" id="btnRetry">Retry</button>
-        </div>
-      </section>
+        <button class="btn btn-pink" id="delBtn">🗑&nbsp; Delete &amp; New Banao</button>
 
-      <!-- Inbox list -->
-      <section class="card" id="inboxCard" aria-label="Inbox">
-        <div class="inbox-head">
-          <h2>📥 Inbox</h2>
-          <span class="auto">Auto-refresh: ON (8s)</span>
+        <div class="status">
+          <span><span class="dot" id="dot"></span> <span id="statusText">Connecting…</span></span>
+          <span>⏱ <span id="timer">—</span></span>
+          <span>✉️ <span id="count">0</span> messages</span>
         </div>
-        <div class="empty" id="inboxEmpty">
-          <div class="big" aria-hidden="true">📬</div>
-          <p id="emptyTitle">Waiting for emails…</p>
-          <p class="sub" id="emptySub">Is address par mail bhejo, yahan aa jayega. Inbox khud refresh hota rehta hai.</p>
-        </div>
-        <ul class="mail-list" id="mailList"></ul>
-      </section>
 
-      <!-- Mail reader -->
-      <section class="card reader" id="readerCard" aria-label="Message" hidden>
-        <div class="reader-head">
-          <button class="btn-back" id="btnBack" type="button">← Inbox</button>
+        <div class="errbox" id="errbox">
+          <span id="errText">Server se connect nahi ho paya — internet check karke Retry dabao.</span>
+          <button id="retryBtn">Retry</button>
         </div>
-        <div class="otp-box" id="otpBox" hidden>
-          <div>
-            <div class="lbl">Verification code mila!</div>
-            <div class="code" id="otpCode">------</div>
-          </div>
-          <button type="button" id="btnCopyOtp">Code Copy Karo</button>
-        </div>
-        <h3 id="readerSubject">…</h3>
-        <div class="meta" id="readerMeta"></div>
-        <div class="mail-body" id="readerBody">Loading…</div>
-      </section>
 
-      <!-- How it works -->
-      <div class="steps" aria-label="How to use">
-        <div class="step"><div class="n">1</div><p><b>Email copy karo</b> — upar wala address jahan signup karna hai wahan paste kar do.</p></div>
-        <div class="step"><div class="n">2</div><p><b>Code ka wait karo</b> — mail 10–30 second me inbox me aa jata hai, auto-refresh on hai.</p></div>
-        <div class="step"><div class="n">3</div><p><b>Mail kholo</b> — verification code alag se highlight hoga, ek tap me copy ho jayega.</p></div>
+        <div class="otp" id="otpBox">Verification code: <b id="otpCode"></b> <button id="otpCopy">Copy code</button></div>
+
+        <div class="inbox" id="inbox"></div>
+
+        <div class="viewer" id="viewer">
+          <h3 id="vSubj"></h3>
+          <div class="meta" id="vMeta"></div>
+          <div class="body" id="vBody"></div>
+        </div>
       </div>
-
-      <p class="note">⚠️ Temp email public hoti hai — bank, paiso ya important accounts ke liye use mat karna. Ye Ninja Mail ki email hai — 24 ghante baad expire ho jati hai.</p>
+      <p class="foot">2Sec Mail — fast, free, temporary inbox.</p>
     </div>
 
-    <div id="toast" role="status" aria-live="polite"></div>
-
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-      (function () {
-        "use strict";
-        // ---- Ninja Mail (TempMail Ninja) backend — Socket.IO ----
-        var SOCKET_URL = "https://tm-app.solucioneswc.com:2083";
-        var WANT_DOMAIN = "jacob.lat";
-        var NAMES = ["ester","luis","helen","marco","sofia","diego","lucia","pablo","carmen","jorge","ana","maria","pedro","laura","miguel","rosa","ivan","nina","oscar","elena"];
+      const API = 'https://mail123.fr/api/v1/';
+      const FR_COM_DOMAINS = ['mail123.fr', 'mail456.fr', 'mail789.fr', 'mail1mail.com', 'mail123.com.br'];
+      const REFRESH_MS = 8000; // stays under the 10/min read limit
 
-        var state = {
-          socket: null,
-          connected: false,
-          bootstrapped: false,
-          token: null,
-          email: null,
-          expiresAtMs: 0,
-          mails: [],        // newest first
-          knownIds: null,   // null until first successful load
-          readIds: {},
-          currentOtp: null,
-          busy: false,
-          inboxBusy: false
-        };
+      let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
 
-        var el = {
-          addr: document.getElementById("emailAddr"),
-          domainNote: document.getElementById("domainNote"),
-          dot: document.getElementById("statusDot"),
-          status: document.getElementById("statusText"),
-          timer: document.getElementById("timerText"),
-          count: document.getElementById("countText"),
-          err: document.getElementById("errBanner"),
-          errText: document.getElementById("errText"),
-          list: document.getElementById("mailList"),
-          empty: document.getElementById("inboxEmpty"),
-          emptyTitle: document.getElementById("emptyTitle"),
-          emptySub: document.getElementById("emptySub"),
-          inboxCard: document.getElementById("inboxCard"),
-          readerCard: document.getElementById("readerCard"),
-          readerSubject: document.getElementById("readerSubject"),
-          readerMeta: document.getElementById("readerMeta"),
-          readerBody: document.getElementById("readerBody"),
-          otpBox: document.getElementById("otpBox"),
-          otpCode: document.getElementById("otpCode"),
-          toast: document.getElementById("toast"),
-          btnCopy: document.getElementById("btnCopy"),
-          btnNew: document.getElementById("btnNew"),
-          btnRefresh: document.getElementById("btnRefresh"),
-          btnDelete: document.getElementById("btnDelete")
-        };
+      const $ = (id) => document.getElementById(id);
+      function setStatus(ok, text) {
+        $('dot').className = 'dot' + (ok ? ' ok' : '');
+        $('statusText').textContent = text;
+      }
+      function showError(msg) {
+        $('errText').textContent = msg;
+        $('errbox').style.display = 'block';
+        setStatus(false, 'Error');
+      }
+      function hideError() { $('errbox').style.display = 'none'; }
+      function findCode(text) {
+        if (!text) return null;
+        const m = String(text).match(/\b(\d{4,8})\b/);
+        return m ? m[1] : null;
+      }
+      function showOtp(code) {
+        if (!code) { $('otpBox').style.display = 'none'; return; }
+        $('otpCode').textContent = code;
+        $('otpBox').style.display = 'flex';
+      }
+      function startTimer() {
+        elapsed = 0;
+        if (timer) clearInterval(timer);
+        timer = setInterval(() => {
+          elapsed++;
+          const m = Math.floor(elapsed / 60), s = elapsed % 60;
+          $('timer').textContent = m + ':' + String(s).padStart(2, '0');
+        }, 1000);
+      }
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
+      function msgDate(m) { return m.date || m.received_at || m.created_at || m.timestamp || ''; }
+      function msgId(m) { return m.id || m.message_id || m.uid; }
 
-        var toastTimer = null;
-        function toast(msg) {
-          el.toast.textContent = msg;
-          el.toast.classList.add("show");
-          clearTimeout(toastTimer);
-          toastTimer = setTimeout(function () { el.toast.classList.remove("show"); }, 2400);
+      async function newEmail() {
+        $('addr').textContent = 'Banaya ja raha hai…';
+        $('addr').classList.remove('err');
+        messages = []; seenIds = new Set();
+        $('inbox').innerHTML = '';
+        $('viewer').style.display = 'none';
+        showOtp(null);
+        $('count').textContent = '0';
+        hideError();
+        setStatus(false, 'Connecting…');
+        try {
+          const pickDomain = FR_COM_DOMAINS[Math.floor(Math.random() * FR_COM_DOMAINS.length)];
+          const res = await fetch(API + 'mailbox/new?domain=' + encodeURIComponent(pickDomain));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          if (!data.address) throw new Error('no address');
+          address = data.address;
+          $('addr').textContent = address;
+          setStatus(true, 'Connected');
+          startTimer();
+          loadInbox();
+        } catch (e) {
+          $('addr').textContent = 'Failed — "New Email" tap karke retry karo';
+          $('addr').classList.add('err');
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
         }
+      }
 
-        function setStatus(kind, text) {
-          el.dot.className = "dot " + kind;
-          el.status.textContent = text;
-        }
-        function showError(msg) {
-          el.errText.textContent = msg;
-          el.err.classList.add("show");
-          setStatus("err", "Error");
-        }
-        function hideError() { el.err.classList.remove("show"); }
-
-        // ---------- token storage (Ninja session token) ----------
-        function loadToken() {
-          try {
-            return window.localStorage.getItem("email_token") ||
-                   window.localStorage.getItem("visitor_token") || null;
-          } catch (e) { return null; }
-        }
-        function saveToken(t) {
-          if (!t) return;
-          state.token = t;
-          try {
-            window.localStorage.setItem("email_token", t);
-            window.localStorage.setItem("visitor_token", t);
-          } catch (e) {}
-        }
-        function clearToken() {
-          state.token = null;
-          try {
-            window.localStorage.removeItem("email_token");
-            window.localStorage.removeItem("visitor_token");
-          } catch (e) {}
-        }
-
-        // ---------- socket helpers ----------
-        function emitAck(event, args, timeoutMs) {
-          return new Promise(function (resolve, reject) {
-            if (!state.socket || !state.connected) { reject(new Error("not_connected")); return; }
-            var done = false;
-            var to = setTimeout(function () {
-              if (!done) { done = true; reject(new Error("timeout")); }
-            }, timeoutMs || 5000);
-            var cb = function (resp) {
-              if (done) return;
-              done = true;
-              clearTimeout(to);
-              resolve(resp);
-            };
-            try {
-              if (args && args.length) state.socket.emit(event, args[0], cb);
-              else state.socket.emit(event, cb);
-            } catch (e) {
-              if (!done) { done = true; clearTimeout(to); reject(e); }
-            }
-          });
-        }
-        function respError(resp) {
-          return resp && typeof resp === "object" && resp.error ? String(resp.error) : null;
-        }
-        function friendlyError(code) {
-          if (!code) return "Ninja Mail se jawab nahi aaya — dobara try karo.";
-          if (code.indexOf("rate_limit") === 0) return "Ninja Mail ne rate limit lagaya hai — 1–2 minute ruk ke Retry dabao.";
-          if (code === "session_expired" || code.indexOf("auth") === 0 || code === "session_active_email_required")
-            return "Session expire ho gaya — Retry dabao, naya email ban jayega.";
-          if (code === "domain_invalid_for_type") return "@jacob.lat abhi available nahi hai.";
-          return "Ninja Mail error: " + code;
-        }
-
-        function connectSocket() {
-          if (typeof window.io !== "function") {
-            el.addr.classList.remove("loading");
-            el.addr.classList.add("failed");
-            el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-            showError("Socket library load nahi hui — internet check karke Retry dabao.");
-            renderList(null);
+      async function loadInbox() {
+        if (!address || Date.now() < pausedUntil) return;
+        try {
+          const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages');
+          if (res.status === 429) {
+            pausedUntil = Date.now() + 60000;
+            showError('Limit poori ho gayi — 1 minute ruk ke Retry dabao.');
             return;
           }
-          if (state.socket) { try { state.socket.disconnect(); } catch (e) {} state.socket = null; }
-          state.connected = false;
-          state.bootstrapped = false;
-          var token = state.token || loadToken();
-          state.token = token;
-          var query = { locale: "en", user_token: "empty", visitor_token: token || "empty" };
-          if (token) query.token = token;
-          var socket = window.io(SOCKET_URL, {
-            autoConnect: false,
-            transports: ["websocket"],
-            query: query,
-            auth: { token: token || "" },
-            timeout: 20000,
-            reconnectionAttempts: 6,
-            reconnectionDelay: 2000
-          });
-          state.socket = socket;
-
-          socket.on("connect", function () {
-            state.connected = true;
-            setStatus("busy", "Connected — session ready ho raha hai…");
-            bootstrap(false);
-          });
-          socket.on("disconnect", function () {
-            state.connected = false;
-            state.bootstrapped = false;
-            if (state.email) setStatus("busy", "Disconnect — reconnect ho raha hai…");
-          });
-          socket.on("connect_error", function () {
-            state.connected = false;
-            if (!state.email) {
-              el.addr.classList.remove("loading");
-              el.addr.classList.add("failed");
-              el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-              renderList(null);
-            }
-            showError("Ninja Mail server se connect nahi ho paya — internet check karke Retry dabao.");
-          });
-          socket.on("new_message_notify", function () {
-            if (state.email) loadInbox(false);
-          });
-          socket.on("remove_visitor_token", function () { clearToken(); });
-          socket.connect();
-        }
-
-        // ---------- session bootstrap (restore or create visitor session) ----------
-        function bootstrap(isRetry) {
-          if (state.bootstrapped) return Promise.resolve();
-          state.bootstrapped = true;
-          var token = state.token || loadToken();
-          return emitAck("get_guest_user_data", [{ token: token || null }], 5000).then(function (resp) {
-            if (respError(resp)) throw new Error(respError(resp));
-            hideError();
-            setStatus("ok", "Connected (Ninja Mail)");
-            var active = resp && resp.activeEmail;
-            if (!state.email && active && active.emailAddress && !active.isExpired && !active.isDeleted) {
-              setEmail(active, null);
-              return loadInbox(false);
-            }
-            if (!state.email) return ensureEmail();
-            return loadInbox(false);
-          }).catch(function (err) {
-            state.bootstrapped = false;
-            if (!state.email && !isRetry) {
-              // One silent retry of the bootstrap before showing an error
-              return bootstrap(true);
-            }
-            if (!state.email) {
-              el.addr.classList.remove("loading");
-              el.addr.classList.add("failed");
-              el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-              renderList(null);
-              showError("Ninja Mail session nahi ban paya — internet check karke Retry dabao.");
-            }
-          });
-        }
-
-        // ---------- email creation: try @jacob.lat first, else Ninja-generated ----------
-        function localAlias() {
-          var n = NAMES[Math.floor(Math.random() * NAMES.length)];
-          var a = 10 + Math.floor(Math.random() * 90);
-          var b = 100 + Math.floor(Math.random() * 900);
-          return n + a + "_" + b;
-        }
-        function ensureEmail() {
-          state.busy = true;
-          setStatus("busy", "Email ban raha hai…");
-          el.addr.classList.add("loading");
-          if (!state.email) el.addr.textContent = "Email ban raha hai…";
-          return emitAck("generate_email_alias", [], 5000).then(function (resp) {
-            var alias = resp && resp.alias ? String(resp.alias) : localAlias();
-            return emitAck("create_email", [{
-              alias: alias, domain: WANT_DOMAIN, emailType: 1, password: "", captchaToken: ""
-            }], 5000);
-          }).catch(function () {
-            // alias/create transport issue — go straight to generate
-            return null;
-          }).then(function (resp) {
-            if (resp && resp.emailData && resp.emailData.emailAddress) {
-              setEmail(resp.emailData, resp.token || resp.newToken);
-              state.busy = false;
-              hideError();
-              setStatus("ok", "Connected (Ninja Mail)");
-              toast("Naya email ready hai 🎲");
-              return loadInbox(false);
-            }
-            // jacob.lat not available (or rate-limited) — Ninja's own random .lat address
-            return emitAck("generate_temp_mail", [], 5000).then(function (g) {
-              if (g && g.emailData && g.emailData.emailAddress) {
-                setEmail(g.emailData, g.newToken || g.token);
-                state.busy = false;
-                hideError();
-                setStatus("ok", "Connected (Ninja Mail)");
-                toast("Naya email ready hai 🎲");
-                return loadInbox(false);
-              }
-              throw new Error(respError(g) || respError(resp) || "generate_failed");
-            });
-          }).catch(function (err) {
-            state.busy = false;
-            if (!state.email) {
-              el.addr.classList.remove("loading");
-              el.addr.classList.add("failed");
-              el.addr.textContent = "Failed — \"New Email\" tap karke retry karo";
-              renderList(null);
-            }
-            showError(friendlyError(err && err.message));
-          });
-        }
-
-        function setEmail(emailData, token) {
-          state.email = emailData.emailAddress || emailData.address || null;
-          if (token) saveToken(token);
-          var exp = emailData.expiresAt || emailData.expires_at;
-          state.expiresAtMs = exp ? Date.parse(exp) : (Date.now() + 24 * 3600 * 1000);
-          if (isNaN(state.expiresAtMs)) state.expiresAtMs = Date.now() + 24 * 3600 * 1000;
-          state.knownIds = null;
-          state.mails = [];
-          state.readIds = {};
-          closeReader();
-          setEmailDisplay();
-          updateTimer();
-        }
-
-        function setEmailDisplay() {
-          el.addr.classList.remove("loading", "failed");
-          el.addr.textContent = state.email;
-          var domain = state.email && state.email.indexOf("@") > -1 ? state.email.split("@")[1] : "";
-          if (domain && domain !== WANT_DOMAIN) el.domainNote.classList.add("show");
-          else el.domainNote.classList.remove("show");
-        }
-
-        function updateTimer() {
-          if (!state.email || !state.expiresAtMs) { el.timer.textContent = "⏱ —"; return; }
-          var remain = Math.floor((state.expiresAtMs - Date.now()) / 1000);
-          if (remain <= 0) {
-            el.timer.textContent = "⏱ Expired";
-            if (!state.busy && state.connected) { toast("Purana email expire — naya ban raha hai 🎲"); ensureEmail(); }
-            return;
-          }
-          var h = Math.floor(remain / 3600), m = Math.floor((remain % 3600) / 60), s = remain % 60;
-          var txt = (h > 0 ? h + ":" : "") + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-          el.timer.textContent = "⏱ " + txt + " left";
-        }
-        setInterval(updateTimer, 1000);
-
-        // ---------- inbox ----------
-        function textOf(v) {
-          if (!v) return "";
-          if (typeof v === "string") return v;
-          return v.text || v.name || v.address || "";
-        }
-        function fmtDate(v) {
-          if (!v) return "";
-          var d = new Date(v);
-          if (isNaN(d.getTime())) return String(v);
-          try {
-            return d.toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-          } catch (e) { return d.toString(); }
-        }
-        function renderList(newIds) {
-          el.list.innerHTML = "";
-          el.count.textContent = "✉ " + state.mails.length + (state.mails.length === 1 ? " message" : " messages");
-          el.empty.style.display = state.mails.length ? "none" : "block";
-          if (!state.email) {
-            el.emptyTitle.textContent = "Pehle email banao";
-            el.emptySub.textContent = "Upar \"New Email\" ya Retry dabao — email bante hi inbox yahan ready ho jayega.";
-          } else {
-            el.emptyTitle.textContent = "Waiting for emails…";
-            el.emptySub.textContent = "Is address par mail bhejo, yahan aa jayega. Inbox khud refresh hota rehta hai.";
-          }
-          state.mails.forEach(function (mail) {
-            var li = document.createElement("li");
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "mail-item";
-            var isNew = newIds && newIds[mail.id];
-            var top = document.createElement("div"); top.className = "top";
-            var from = document.createElement("span"); from.className = "from"; from.textContent = textOf(mail.sender) || "(no sender)";
-            var time = document.createElement("span"); time.className = "time"; time.textContent = fmtDate(mail.date);
-            top.appendChild(from); top.appendChild(time);
-            var subj = document.createElement("div"); subj.className = "subj";
-            if (!state.readIds[mail.id]) { var d = document.createElement("span"); d.className = "unread-dot"; subj.appendChild(d); }
-            var st = document.createElement("span"); st.textContent = mail.subject || "(no subject)"; subj.appendChild(st);
-            if (isNew) { var nb = document.createElement("span"); nb.className = "new-badge"; nb.textContent = "NEW"; subj.appendChild(nb); }
-            btn.appendChild(top); btn.appendChild(subj);
-            btn.addEventListener("click", function () { openMail(mail); });
-            li.appendChild(btn);
-            el.list.appendChild(li);
-          });
-        }
-
-        function loadInbox(isManual) {
-          if (!state.connected || !state.email || state.inboxBusy) return Promise.resolve();
-          state.inboxBusy = true;
-          return emitAck("get_email_messages", [{ messageType: "inbound" }], 60000).then(function (resp) {
-            state.inboxBusy = false;
-            var err = respError(resp);
-            if (err) {
-              if (err === "session_active_email_required" || err === "session_expired") {
-                state.bootstrapped = false;
-                return bootstrap(false);
-              }
-              throw new Error(err);
-            }
-            hideError();
-            setStatus("ok", "Connected (Ninja Mail)");
-            var list = (resp && resp.email_messages) || [];
-            list = list.slice().sort(function (a, b) {
-              return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
-            });
-            var newIds = null;
-            if (state.knownIds !== null) {
-              newIds = {};
-              list.forEach(function (m) { if (!state.knownIds[m.id]) newIds[m.id] = true; });
-              var anyNew = Object.keys(newIds).length > 0;
-              if (anyNew && el.readerCard.hidden) toast("Naya mail aaya hai! 📩");
-              if (!anyNew) newIds = null;
-            }
-            state.knownIds = {};
-            list.forEach(function (m) { state.knownIds[m.id] = true; });
-            state.mails = list;
-            renderList(newIds);
-            if (isManual) toast("Inbox refreshed 🔄");
-          }).catch(function (err) {
-            state.inboxBusy = false;
-            if (isManual) showError(friendlyError(err && err.message));
-          });
-        }
-
-        function newEmail(auto) {
-          if (state.busy || !state.connected) {
-            if (!state.connected) { setStatus("busy", "Connecting…"); connectSocket(); }
-            return;
-          }
-          state.knownIds = null;
-          state.mails = [];
-          closeReader();
-          renderList(null);
-          if (!auto) toast("Naya email ban raha hai…");
-          ensureEmail();
-        }
-
-        function forgetAndNew() {
-          var current = state.email;
-          function proceed() {
-            clearToken();
-            state.email = null;
-            state.knownIds = null;
-            state.mails = [];
-            closeReader();
-            renderList(null);
-            toast("Purana email delete ho gaya 🗑️");
-            if (state.connected) ensureEmail();
-            else connectSocket();
-          }
-          if (current && state.connected) {
-            emitAck("delete_email", [{ emailAddress: current }], 5000)
-              .catch(function () {})
-              .then(proceed);
-          } else { proceed(); }
-        }
-
-        function extractCode(text) {
-          if (!text) return null;
-          var m = text.match(/(?:code|otp|verification|verify|pin|password|one[\s-]*time)[^0-9a-z]{0,40}?(\d{4,8})\b/i);
-          if (m) return m[1];
-          m = text.match(/\b(\d{6})\b/);
-          if (m) return m[1];
-          m = text.match(/\b(\d{4})\b/);
-          if (m) return m[1];
-          return null;
-        }
-
-        function openMail(mail) {
-          el.inboxCard.hidden = true;
-          el.readerCard.hidden = false;
-          el.readerSubject.textContent = mail.subject || "(no subject)";
-          el.readerMeta.textContent = "From: " + textOf(mail.sender) + (mail.date ? "  •  " + fmtDate(mail.date) : "");
-          el.readerBody.textContent = "Loading…";
-          el.otpBox.hidden = true;
-          state.currentOtp = null;
-          state.readIds[mail.id] = true;
-          renderList(null);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          emitAck("get_email_message", [{ messageId: mail.id }], 60000).then(function (resp) {
-            if (respError(resp) || !resp || !resp.emailMessage) {
-              throw new Error(respError(resp) || "message_missing");
-            }
-            var data = resp.emailMessage.data || {};
-            var body = data.content || "";
-            if (data.subject) el.readerSubject.textContent = data.subject;
-            el.readerMeta.textContent = "From: " + (textOf(data.from) || textOf(mail.sender)) +
-              (data.to ? "  •  To: " + textOf(data.to) : "") +
-              (data.date ? "  •  " + fmtDate(data.date) : "");
-            var code = extractCode((data.subject || mail.subject || "") + "\n" + body.replace(/<[^>]*>/g, " "));
-            if (code) {
-              state.currentOtp = code;
-              el.otpCode.textContent = code;
-              el.otpBox.hidden = false;
-            }
-            if (/<[a-z][\s\S]*>/i.test(body)) {
-              el.readerBody.innerHTML = "";
-              var frame = document.createElement("iframe");
-              frame.setAttribute("sandbox", "");
-              frame.srcdoc = body;
-              el.readerBody.appendChild(frame);
-            } else {
-              el.readerBody.textContent = body;
-            }
-          }).catch(function () {
-            el.readerBody.textContent = "Mail body load nahi hua — wapas jaake dobara try karo.";
-          });
-        }
-
-        function closeReader() {
-          el.readerCard.hidden = true;
-          el.inboxCard.hidden = false;
-        }
-
-        function copyText(text, okMsg) {
-          function done() { toast(okMsg); }
-          function fallback() {
-            var ta = document.createElement("textarea");
-            ta.value = text;
-            ta.style.position = "fixed"; ta.style.opacity = "0";
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand("copy"); done(); }
-            catch (e) { toast("Copy nahi hua — lamba press karke copy karo"); }
-            document.body.removeChild(ta);
-          }
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(done, fallback);
-          } else { fallback(); }
-        }
-
-        el.btnCopy.addEventListener("click", function () {
-          if (state.email) copyText(state.email, "Email copy ho gaya 📋");
-        });
-        el.btnNew.addEventListener("click", function () { newEmail(false); });
-        el.btnDelete.addEventListener("click", forgetAndNew);
-        el.btnRefresh.addEventListener("click", function () {
-          var icon = this.querySelector("svg");
-          if (icon) icon.classList.add("spin");
-          loadInbox(true).then(function () { if (icon) icon.classList.remove("spin"); });
-        });
-        document.getElementById("btnRetry").addEventListener("click", function () {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
           hideError();
-          if (!state.connected) { setStatus("busy", "Connecting…"); connectSocket(); }
-          else if (!state.email) { state.bootstrapped = false; bootstrap(false); }
-          else loadInbox(true);
-        });
-        document.getElementById("btnBack").addEventListener("click", closeReader);
-        document.getElementById("btnCopyOtp").addEventListener("click", function () {
-          if (state.currentOtp) copyText(state.currentOtp, "Code copy ho gaya 🔑");
-        });
+          setStatus(true, 'Connected');
+          messages = Array.isArray(data.messages) ? data.messages : [];
+          $('count').textContent = (data.count != null ? data.count : messages.length);
+          renderInbox();
+          const withOtp = messages.find((m) => m.otp_code);
+          if (withOtp) showOtp(withOtp.otp_code);
+          else if (messages.length) {
+            const code = findCode((messages[0].subject || '') + ' ' + (messages[0].preview || messages[0].snippet || ''));
+            if (code) showOtp(code);
+          }
+        } catch (e) {
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
+      }
 
-        setStatus("busy", "Connecting…");
-        connectSocket();
-        setInterval(function () { if (state.email && state.connected && el.readerCard.hidden) loadInbox(false); }, 8000);
-      })();
+      function renderInbox() {
+        const box = $('inbox');
+        if (!messages.length) {
+          box.innerHTML = '<div class="empty">Inbox khali hai — yahan verification code ayega.</div>';
+          return;
+        }
+        box.innerHTML = messages.map((m) => {
+          const id = msgId(m);
+          const unread = seenIds.has(id) ? '' : ' unread';
+          const d = new Date(msgDate(m));
+          return '<div class="msg' + unread + '" data-id="' + escapeHtml(id) + '">' +
+            '<div class="from">' + escapeHtml(msgFrom(m)) + '</div>' +
+            '<div class="subj">' + escapeHtml(m.subject || '(no subject)') + '</div>' +
+            '<div class="date">' + (isNaN(d) ? escapeHtml(msgDate(m)) : d.toLocaleString()) + '</div></div>';
+        }).join('');
+        box.querySelectorAll('.msg').forEach((el) => {
+          el.addEventListener('click', () => openMessage(el.getAttribute('data-id')));
+        });
+      }
+
+      async function openMessage(id) {
+        seenIds.add(id);
+        renderInbox();
+        try {
+          const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages/' + encodeURIComponent(id));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const m = data.message || data.data || data;
+          $('vSubj').textContent = m.subject || '(no subject)';
+          $('vMeta').textContent = msgFrom(m) + ' • ' + msgDate(m);
+          const bodyEl = $('vBody');
+          const text = m.text || m.textBody || m.body_text || m.plain || '';
+          const html = m.html || m.htmlBody || m.body_html || m.body || '';
+          const code = m.otp_code || findCode((m.subject || '') + ' ' + text);
+          if (code) showOtp(code);
+          if (html && /<[a-z][\s\S]*>/i.test(html)) {
+            bodyEl.innerHTML = '';
+            const f = document.createElement('iframe');
+            f.setAttribute('sandbox', '');
+            f.srcdoc = html;
+            bodyEl.appendChild(f);
+          } else {
+            bodyEl.textContent = text || html || '(khali message)';
+          }
+          $('viewer').style.display = 'block';
+          $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {
+          showError('Message khol nahi paya — Retry dabao.');
+        }
+      }
+
+      function copyText(t, btn) {
+        const done = () => { if (btn) { const old = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = old; }, 1200); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done));
+        } else fallbackCopy(t, done);
+      }
+      function fallbackCopy(t, done) {
+        const ta = document.createElement('textarea');
+        ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+
+      $('copyBtn').addEventListener('click', (e) => copyText(address, e.currentTarget));
+      $('newBtn').addEventListener('click', newEmail);
+      $('delBtn').addEventListener('click', newEmail);
+      $('refreshBtn').addEventListener('click', loadInbox);
+      $('retryBtn').addEventListener('click', () => { hideError(); if (!address) newEmail(); else loadInbox(); });
+      $('otpCopy').addEventListener('click', (e) => copyText($('otpCode').textContent, e.currentTarget));
+
+      setInterval(() => { if (address) loadInbox(); }, REFRESH_MS);
+      newEmail();
     </script>
   </body>
 </html>
