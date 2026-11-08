@@ -20,6 +20,26 @@ us naam pe email kabhi receive nahi ho sakta — ye sabse zaroori step hai.
 > server nahi. Domain + VPS milte hi neeche wale steps se 10 minute me
 > live ho jayega.
 
+## FREE wala rasta (Oracle Cloud — $0 / hamesha free)
+
+1. **cloud.oracle.com** pe free account banao. Card verification mangta hai
+   (paise nahi katte, sirf verify hota hai) — ye step tumhe khud karna
+   padega, main tumhara card/email use nahi kar sakta.
+2. **Compute → Create Instance** — "Always Free" shape chuno
+   (VM.Standard.A1.Flex, Ubuntu image). Agar "out of capacity" aye to
+   doosra region try karo.
+3. Instance ke **security list** me port **25** aur **5000** kholo (ingress rules).
+4. SSH karke **ek command** chalao (ye sab kuch khud kar degi):
+   ```bash
+   MAIL_DOMAIN=tumhari-domain.com bash <(curl -s https://raw.githubusercontent.com/muhammadmujtabamallah-netizen/Temp-Mail/main/server/setup.sh)
+   ```
+   Bas! Website `http://VPS-IP:5000/` pe chal padegi.
+5. Domain ke registrar pe **MX record** lagao (neeche DNS table dekho).
+
+Domain ke liye sabse sasta `.xyz` hai (lagbhag $1–2 pehle saal). Free
+subdomain (jaise afraid.org se) bhi chal sakta hai — wo bhi bata dunga
+agar chahiye.
+
 ## VPS pe setup (Ubuntu)
 
 ```bash
