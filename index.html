@@ -91,21 +91,12 @@
     </div>
 
     <script>
-      const API = 'https://www.1secmail.com/api/v1/';
-      const DOMAINS = ['1secmail.com', '1secmail.org', '1secmail.net', 'esiix.com', 'wwjmp.com'];
-      const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      const REFRESH_MS = 5000;
+      const API = 'https://mail123.fr/api/v1/';
+      const REFRESH_MS = 8000; // stays under the 10/min read limit
 
-      let login = '', domain = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0;
+      let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
 
       const $ = (id) => document.getElementById(id);
-      function randLogin() {
-        const len = Math.random() < 0.5 ? 4 : 5; // random 4-5 characters
-        let s = '';
-        for (let i = 0; i < len; i++) s += CHARS[Math.floor(Math.random() * CHARS.length)];
-        return s;
-      }
-      function address() { return login + '@' + domain; }
       function setStatus(ok, text) {
         $('dot').className = 'dot' + (ok ? ' ok' : '');
         $('statusText').textContent = text;
@@ -118,7 +109,7 @@
       function hideError() { $('errbox').style.display = 'none'; }
       function findCode(text) {
         if (!text) return null;
-        const m = text.match(/\b(\d{4,8})\b/);
+        const m = String(text).match(/\b(\d{4,8})\b/);
         return m ? m[1] : null;
       }
       function showOtp(code) {
@@ -135,36 +126,60 @@
           $('timer').textContent = m + ':' + String(s).padStart(2, '0');
         }, 1000);
       }
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
+      function msgDate(m) { return m.date || m.received_at || m.created_at || m.timestamp || ''; }
+      function msgId(m) { return m.id || m.message_id || m.uid; }
 
-      function newEmail() {
-        login = randLogin();
-        domain = DOMAINS[Math.floor(Math.random() * DOMAINS.length)];
-        messages = []; seenIds = new Set();
-        $('addr').textContent = address();
+      async function newEmail() {
+        $('addr').textContent = 'Banaya ja raha hai…';
         $('addr').classList.remove('err');
+        messages = []; seenIds = new Set();
         $('inbox').innerHTML = '';
         $('viewer').style.display = 'none';
         showOtp(null);
         $('count').textContent = '0';
         hideError();
-        setStatus(true, 'Connected');
-        startTimer();
-        loadInbox();
+        setStatus(false, 'Connecting…');
+        try {
+          const res = await fetch(API + 'mailbox/new');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          if (!data.address) throw new Error('no address');
+          address = data.address;
+          $('addr').textContent = address;
+          setStatus(true, 'Connected');
+          startTimer();
+          loadInbox();
+        } catch (e) {
+          $('addr').textContent = 'Failed — "New Email" tap karke retry karo';
+          $('addr').classList.add('err');
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
       }
 
       async function loadInbox() {
-        if (!login) return;
+        if (!address || Date.now() < pausedUntil) return;
         try {
-          const res = await fetch(API + '?action=getMessages&login=' + encodeURIComponent(login) + '&domain=' + encodeURIComponent(domain) + '&_=' + Date.now());
+          const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages');
+          if (res.status === 429) {
+            pausedUntil = Date.now() + 60000;
+            showError('Limit poori ho gayi — 1 minute ruk ke Retry dabao.');
+            return;
+          }
           if (!res.ok) throw new Error('HTTP ' + res.status);
-          const list = await res.json();
+          const data = await res.json();
           hideError();
           setStatus(true, 'Connected');
-          messages = Array.isArray(list) ? list : [];
-          $('count').textContent = messages.length;
+          messages = Array.isArray(data.messages) ? data.messages : [];
+          $('count').textContent = (data.count != null ? data.count : messages.length);
           renderInbox();
-          if (messages.length) {
-            const code = findCode(messages[0].subject || '');
+          const withOtp = messages.find((m) => m.otp_code);
+          if (withOtp) showOtp(withOtp.otp_code);
+          else if (messages.length) {
+            const code = findCode((messages[0].subject || '') + ' ' + (messages[0].preview || messages[0].snippet || ''));
             if (code) showOtp(code);
           }
         } catch (e) {
@@ -179,43 +194,42 @@
           return;
         }
         box.innerHTML = messages.map((m) => {
-          const unread = seenIds.has(m.id) ? '' : ' unread';
-          const d = new Date(m.date);
-          return '<div class="msg' + unread + '" data-id="' + m.id + '">' +
-            '<div class="from">' + escapeHtml(m.from || '') + '</div>' +
+          const id = msgId(m);
+          const unread = seenIds.has(id) ? '' : ' unread';
+          const d = new Date(msgDate(m));
+          return '<div class="msg' + unread + '" data-id="' + escapeHtml(id) + '">' +
+            '<div class="from">' + escapeHtml(msgFrom(m)) + '</div>' +
             '<div class="subj">' + escapeHtml(m.subject || '(no subject)') + '</div>' +
-            '<div class="date">' + (isNaN(d) ? escapeHtml(m.date || '') : d.toLocaleString()) + '</div></div>';
+            '<div class="date">' + (isNaN(d) ? escapeHtml(msgDate(m)) : d.toLocaleString()) + '</div></div>';
         }).join('');
         box.querySelectorAll('.msg').forEach((el) => {
-          el.addEventListener('click', () => openMessage(Number(el.getAttribute('data-id'))));
+          el.addEventListener('click', () => openMessage(el.getAttribute('data-id')));
         });
-      }
-      function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       }
 
       async function openMessage(id) {
         seenIds.add(id);
         renderInbox();
         try {
-          const res = await fetch(API + '?action=readMessage&login=' + encodeURIComponent(login) + '&domain=' + encodeURIComponent(domain) + '&id=' + id + '&_=' + Date.now());
+          const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages/' + encodeURIComponent(id));
           if (!res.ok) throw new Error('HTTP ' + res.status);
-          const m = await res.json();
+          const data = await res.json();
+          const m = data.message || data.data || data;
           $('vSubj').textContent = m.subject || '(no subject)';
-          $('vMeta').textContent = (m.from || '') + ' • ' + (m.date || '');
+          $('vMeta').textContent = msgFrom(m) + ' • ' + msgDate(m);
           const bodyEl = $('vBody');
-          const text = m.textBody || '';
-          const html = m.htmlBody || '';
-          const code = findCode((m.subject || '') + ' ' + text);
+          const text = m.text || m.textBody || m.body_text || m.plain || '';
+          const html = m.html || m.htmlBody || m.body_html || m.body || '';
+          const code = m.otp_code || findCode((m.subject || '') + ' ' + text);
           if (code) showOtp(code);
-          if (html) {
+          if (html && /<[a-z][\s\S]*>/i.test(html)) {
             bodyEl.innerHTML = '';
             const f = document.createElement('iframe');
             f.setAttribute('sandbox', '');
             f.srcdoc = html;
             bodyEl.appendChild(f);
           } else {
-            bodyEl.textContent = text || '(khali message)';
+            bodyEl.textContent = text || html || '(khali message)';
           }
           $('viewer').style.display = 'block';
           $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -238,14 +252,14 @@
         document.body.removeChild(ta);
       }
 
-      $('copyBtn').addEventListener('click', (e) => copyText(address(), e.currentTarget));
+      $('copyBtn').addEventListener('click', (e) => copyText(address, e.currentTarget));
       $('newBtn').addEventListener('click', newEmail);
       $('delBtn').addEventListener('click', newEmail);
       $('refreshBtn').addEventListener('click', loadInbox);
-      $('retryBtn').addEventListener('click', () => { hideError(); loadInbox(); });
+      $('retryBtn').addEventListener('click', () => { hideError(); if (!address) newEmail(); else loadInbox(); });
       $('otpCopy').addEventListener('click', (e) => copyText($('otpCode').textContent, e.currentTarget));
 
-      setInterval(() => { if (login) loadInbox(); }, REFRESH_MS);
+      setInterval(() => { if (address) loadInbox(); }, REFRESH_MS);
       newEmail();
     </script>
   </body>
