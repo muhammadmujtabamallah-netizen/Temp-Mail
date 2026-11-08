@@ -47,7 +47,7 @@
       .viewer iframe { width:100%; border:0; min-height:220px; }
       .foot { text-align:center; color:var(--muted); font-size:13px; margin-top:22px; }
       .svc { display:flex; gap:8px; margin:0 0 14px; }
-      .svc button { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px; font-size:15px; font-weight:700; cursor:pointer; color:#374151; }
+      .svc button { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 6px; font-size:14px; font-weight:700; cursor:pointer; color:#374151; white-space:nowrap; }
       .svc button.on { background:var(--green); border-color:var(--green); color:#fff; }
     </style>
   </head>
@@ -63,6 +63,7 @@
         <div class="svc">
           <button id="svcMail123" class="on">mail123</button>
           <button id="svcKitten">InboxKitten</button>
+          <button id="svcMaildrop">Maildrop</button>
         </div>
         <div class="label">YOUR TEMPORARY EMAIL ADDRESS</div>
         <div class="addr" id="addr">Banaya ja raha hai…</div>
@@ -103,6 +104,8 @@
       const REFRESH_MS = 8000; // stays under the 10/min read limit
       const IK_API = 'https://inboxkitten.com/api/v1/mail';
       const IK_DOMAIN = 'inboxkitten.com';
+      const MD_API = 'https://api.maildrop.cc/graphql';
+      const MD_DOMAIN = 'maildrop.cc';
 
       let address = '', messages = [], seenIds = new Set(), timer = null, elapsed = 0, pausedUntil = 0;
       let service = 'mail123', otpFetchedFor = null;
@@ -153,11 +156,26 @@
         const n = Math.random().toString(36).slice(2, 6);
         return w1 + '-' + w2 + '-' + n + '@' + IK_DOMAIN;
       }
+      function mdAddress() {
+        const w1 = IK_WORDS1[Math.floor(Math.random() * IK_WORDS1.length)];
+        const w2 = IK_WORDS2[Math.floor(Math.random() * IK_WORDS2.length)];
+        const n = Math.random().toString(36).slice(2, 6);
+        return w1 + '-' + w2 + '-' + n + '@' + MD_DOMAIN;
+      }
+      function mdAlias() { return address.split('@')[0]; }
+      async function mdQuery(query) {
+        const res = await fetch(MD_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.errors) throw new Error(data.errors[0].message);
+        return data.data;
+      }
       function switchService(s) {
         service = s;
         try { localStorage.setItem('twosec-service', s); } catch (e) {}
         $('svcMail123').classList.toggle('on', s === 'mail123');
         $('svcKitten').classList.toggle('on', s === 'kitten');
+        $('svcMaildrop').classList.toggle('on', s === 'maildrop');
         newEmail();
       }
       function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
@@ -177,6 +195,14 @@
         otpFetchedFor = null;
         if (service === 'kitten') {
           address = kittenAddress();
+          $('addr').textContent = address;
+          setStatus(true, 'Connected');
+          startTimer();
+          loadInbox();
+          return;
+        }
+        if (service === 'maildrop') {
+          address = mdAddress();
           $('addr').textContent = address;
           setStatus(true, 'Connected');
           startTimer();
@@ -204,6 +230,7 @@
       async function loadInbox() {
         if (!address || Date.now() < pausedUntil) return;
         if (service === 'kitten') { await loadKittenInbox(); return; }
+        if (service === 'maildrop') { await loadMaildropInbox(); return; }
         try {
           const res = await fetch(API + 'mailbox/' + encodeURIComponent(address) + '/messages');
           if (res.status === 429) {
@@ -266,6 +293,38 @@
         } catch (e) {}
       }
 
+      async function loadMaildropInbox() {
+        try {
+          const data = await mdQuery('{ inbox(mailbox: "' + mdAlias() + '") { id headerfrom subject date } }');
+          hideError();
+          setStatus(true, 'Connected');
+          messages = (Array.isArray(data.inbox) ? data.inbox : []).map((m) => {
+            return { id: m.id, from: m.headerfrom || '', subject: m.subject || '(no subject)', date: m.date || '' };
+          }).sort((a, b) => new Date(b.date) - new Date(a.date));
+          $('count').textContent = messages.length;
+          renderInbox();
+          if (messages.length && otpFetchedFor !== messages[0].id) {
+            const code = findCode(messages[0].subject || '');
+            if (code) showOtp(code);
+            else {
+              otpFetchedFor = messages[0].id;
+              fetchMaildropOtp(messages[0]);
+            }
+          }
+        } catch (e) {
+          showError('Server se connect nahi ho paya — internet check karke Retry dabao.');
+        }
+      }
+
+      async function fetchMaildropOtp(m) {
+        try {
+          const data = await mdQuery('{ message(mailbox: "' + mdAlias() + '", id: "' + m.id + '") { data html } }');
+          const msg = data.message || {};
+          const code = findCode(stripHtml(msg.html || '') + ' ' + (msg.data || ''));
+          if (code) showOtp(code);
+        } catch (e) {}
+      }
+
       function renderInbox() {
         const box = $('inbox');
         if (!messages.length) {
@@ -311,6 +370,35 @@
             f.setAttribute('sandbox', '');
             f.srcdoc = html;
             bodyEl.appendChild(f);
+            $('viewer').style.display = 'block';
+            $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch (e) {
+            showError('Message khol nahi paya — Retry dabao.');
+          }
+          return;
+        }
+        if (service === 'maildrop') {
+          const m = messages.find((x) => String(x.id) === String(id));
+          if (!m) return;
+          $('vSubj').textContent = m.subject || '(no subject)';
+          $('vMeta').textContent = (m.from || '') + ' • ' + (m.date ? new Date(m.date).toLocaleString() : '');
+          const bodyEl = $('vBody');
+          try {
+            const data = await mdQuery('{ message(mailbox: "' + mdAlias() + '", id: "' + m.id + '") { data html } }');
+            const msg = data.message || {};
+            const code = findCode((msg.subject || m.subject || '') + ' ' + stripHtml(msg.html || '') + ' ' + (msg.data || ''));
+            if (code) showOtp(code);
+            if (msg.html && /<[a-z][\s\S]*>/i.test(msg.html)) {
+              bodyEl.innerHTML = '';
+              const f = document.createElement('iframe');
+              f.setAttribute('sandbox', '');
+              f.srcdoc = msg.html;
+              bodyEl.appendChild(f);
+            } else {
+              let text = msg.data || '';
+              const parts = text.split(/\r?\n\r?\n/);
+              bodyEl.textContent = parts.length > 1 ? parts.slice(1).join('\n\n') : text || '(khali message)';
+            }
             $('viewer').style.display = 'block';
             $('viewer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           } catch (e) {
@@ -369,9 +457,11 @@
 
       $('svcMail123').addEventListener('click', () => switchService('mail123'));
       $('svcKitten').addEventListener('click', () => switchService('kitten'));
-      try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123') service = saved; } catch (e) {}
+      $('svcMaildrop').addEventListener('click', () => switchService('maildrop'));
+      try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123' || saved === 'maildrop') service = saved; } catch (e) {}
       $('svcMail123').classList.toggle('on', service === 'mail123');
       $('svcKitten').classList.toggle('on', service === 'kitten');
+      $('svcMaildrop').classList.toggle('on', service === 'maildrop');
 
       setInterval(() => { if (address) loadInbox(); }, REFRESH_MS);
       newEmail();
