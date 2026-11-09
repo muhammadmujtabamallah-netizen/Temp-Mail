@@ -45,7 +45,14 @@
       .viewer .meta { color:var(--muted); font-size:13px; margin-bottom:10px; }
       .viewer .body { white-space:pre-wrap; word-break:break-word; font-size:15px; line-height:1.55; }
       .viewer iframe { width:100%; border:0; min-height:220px; }
-      .foot { text-align:center; color:var(--muted); font-size:13px; margin-top:22px; }
+      .num-note { font-size:14px; line-height:1.5; color:#374151; background:#fef9c3; border:1px solid #fde68a; border-radius:12px; padding:12px 14px; margin:0 0 14px; }
+      .mode { display:flex; gap:8px; margin:0 0 14px; }
+      .mode button { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:12px; font-size:16px; font-weight:700; cursor:pointer; color:#374151; }
+      .mode button.on { background:var(--green); border-color:var(--green); color:#fff; }
+      .numrow { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:10px; cursor:pointer; background:#fff; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+      .numrow.sel { border-color:#9ecdb4; background:#f4fbf7; }
+      .numrow .n { font-weight:700; font-size:17px; }
+      .numrow .c { color:var(--muted); font-size:13px; white-space:nowrap; }
       .svc { display:flex; gap:8px; margin:0 0 14px; flex-wrap:wrap; }
       .svc button { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 4px; font-size:13px; font-weight:700; cursor:pointer; color:#374151; white-space:nowrap; }
       .svc button.on { background:var(--green); border-color:var(--green); color:#fff; }
@@ -57,8 +64,14 @@
         <div class="logo">✉️</div>
         <h1>2Sec Mail</h1>
       </header>
-      <p class="sub">Free temporary email — instant inbox, no signup. Verification codes yahin receive karo!</p>
+      <p class="sub">Free temporary email &amp; number — instant inbox, no signup. Verification codes yahin receive karo!</p>
 
+      <div class="mode">
+        <button id="modeMail" class="on">✉️ Temp Mail</button>
+        <button id="modeNumber">📱 Temp Number</button>
+      </div>
+
+      <div id="mailSection">
       <div class="card">
         <div class="svc">
           <button id="svcMail123" class="on">mail123</button>
@@ -95,6 +108,27 @@
           <h3 id="vSubj"></h3>
           <div class="meta" id="vMeta"></div>
           <div class="body" id="vBody"></div>
+        </div>
+      </div>
+      </div>
+      <div id="numberSection" style="display:none">
+        <div class="card">
+          <div class="label">TEMP NUMBER — FREE SMS RECEIVE KARO</div>
+          <p class="num-note">⚠️ Ye numbers public hain — koi bhi inbox dekh sakta hai. Bank ya important accounts ke liye use na karo. Code inbox me khud dekh ke copy karo (SMS me auto-detect nahi hota).</p>
+          <div id="numList"><div class="empty">Numbers load ho rahe hain…</div></div>
+          <div class="row">
+            <button class="btn" id="numRefreshBtn">↻&nbsp; Numbers Refresh</button>
+          </div>
+          <div id="numSelected" style="display:none; margin-top:16px">
+            <div class="label">SELECTED NUMBER</div>
+            <div class="addr" id="numAddr">—</div>
+            <button class="btn btn-green" id="numCopyBtn">⧉&nbsp; Copy Number</button>
+            <div class="row">
+              <button class="btn" id="numInboxBtn">↻&nbsp; Refresh Inbox</button>
+              <button class="btn" id="numOpenBtn">↗&nbsp; Site pe kholo</button>
+            </div>
+            <iframe id="numFrame" sandbox="allow-scripts" style="width:100%; height:520px; border:1px solid var(--line); border-radius:14px; margin-top:14px; background:#fff;" title="SMS inbox"></iframe>
+          </div>
         </div>
       </div>
       <p class="foot">2Sec Mail — fast, free, temporary inbox.</p>
@@ -233,6 +267,51 @@
         $('svcMailcatch').classList.toggle('on', s === 'mailcatch');
         $('svcGuerrilla').classList.toggle('on', s === 'guerrilla');
         newEmail();
+      }
+
+      // ---------- temp number (temp-sms.org) ----------
+      const TS_API = 'https://temp-sms.org/api/numbers';
+      const TS_INBOX = 'https://temp-sms.org/sms/';
+      let mode = 'mail', smsNumbers = [], selectedSms = null;
+
+      function setMode(m) {
+        mode = m;
+        try { localStorage.setItem('twosec-mode', m); } catch (e) {}
+        $('modeMail').classList.toggle('on', m === 'mail');
+        $('modeNumber').classList.toggle('on', m === 'number');
+        $('mailSection').style.display = m === 'mail' ? '' : 'none';
+        $('numberSection').style.display = m === 'number' ? '' : 'none';
+        if (m === 'number' && !smsNumbers.length) loadNumbers();
+      }
+      async function loadNumbers() {
+        $('numList').innerHTML = '<div class="empty">Numbers load ho rahe hain…</div>';
+        try {
+          const res = await fetch(TS_API);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          smsNumbers = Array.isArray(data.items) ? data.items : [];
+          if (!smsNumbers.length) throw new Error('no numbers');
+          $('numList').innerHTML = smsNumbers.map((n, i) => {
+            return '<div class="numrow' + (selectedSms && selectedSms.NumberFlat === n.NumberFlat ? ' sel' : '') + '" data-i="' + i + '">' +
+              '<span class="n">' + escapeHtml(n.NumberFormatted || n.NumberFlat) + '</span>' +
+              '<span class="c">🇳🇿 ' + (n.SmsCount != null ? n.SmsCount + ' SMS' : '') + '</span></div>';
+          }).join('');
+          $('numList').querySelectorAll('.numrow').forEach((el) => {
+            el.addEventListener('click', () => selectNumber(Number(el.getAttribute('data-i'))));
+          });
+        } catch (e) {
+          $('numList').innerHTML = '<div class="empty">Numbers load nahi hue — Refresh dabao.</div>';
+        }
+      }
+      function selectNumber(i) {
+        const n = smsNumbers[i];
+        if (!n) return;
+        selectedSms = n;
+        $('numList').querySelectorAll('.numrow').forEach((el) => el.classList.toggle('sel', Number(el.getAttribute('data-i')) === i));
+        $('numAddr').textContent = n.NumberFormatted || ('+' + n.NumberFlat);
+        $('numSelected').style.display = 'block';
+        $('numFrame').src = TS_INBOX + encodeURIComponent(n.NumberFlat);
+        $('numSelected').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
       function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
       function msgDate(m) { return m.date || m.received_at || m.created_at || m.timestamp || ''; }
@@ -672,6 +751,14 @@
       $('svcMaildrop').addEventListener('click', () => switchService('maildrop'));
       $('svcMailcatch').addEventListener('click', () => switchService('mailcatch'));
       $('svcGuerrilla').addEventListener('click', () => switchService('guerrilla'));
+      $('modeMail').addEventListener('click', () => setMode('mail'));
+      $('modeNumber').addEventListener('click', () => setMode('number'));
+      $('numRefreshBtn').addEventListener('click', loadNumbers);
+      $('numCopyBtn').addEventListener('click', (e) => copyText(selectedSms ? (selectedSms.NumberFormatted || ('+' + selectedSms.NumberFlat)) : '', e.currentTarget));
+      $('numInboxBtn').addEventListener('click', () => { if (selectedSms) $('numFrame').src = TS_INBOX + encodeURIComponent(selectedSms.NumberFlat); });
+      $('numOpenBtn').addEventListener('click', () => { if (selectedSms) window.open(TS_INBOX + encodeURIComponent(selectedSms.NumberFlat), '_blank'); });
+      try { const savedMode = localStorage.getItem('twosec-mode'); if (savedMode === 'number' || savedMode === 'mail') mode = savedMode; } catch (e) {}
+      setMode(mode);
       try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123' || saved === 'maildrop' || saved === 'mailcatch' || saved === 'guerrilla') service = saved; } catch (e) {}
       $('svcMail123').classList.toggle('on', service === 'mail123');
       $('svcKitten').classList.toggle('on', service === 'kitten');
