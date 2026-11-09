@@ -114,11 +114,8 @@
       <div id="numberSection" style="display:none">
         <div class="card">
           <div class="label">TEMP NUMBER — FREE SMS RECEIVE KARO</div>
-          <p class="num-note">⚠️ Ye numbers public hain — koi bhi inbox dekh sakta hai. Bank ya important accounts ke liye use na karo. Code inbox me khud dekh ke copy karo (SMS me auto-detect nahi hota).</p>
+          <p class="num-note">⚠️ Ye numbers Quackr ke free public numbers hain (India, UK, US aur bhi) — koi bhi inbox dekh sakta hai. Bank ya important accounts ke liye use na karo. Code inbox me khud dekh ke copy karo (SMS me auto-detect nahi hota).</p>
           <div id="numList"><div class="empty">Numbers load ho rahe hain…</div></div>
-          <div class="row">
-            <button class="btn" id="numRefreshBtn">↻&nbsp; Numbers Refresh</button>
-          </div>
           <div id="numSelected" style="display:none; margin-top:16px">
             <div class="label">SELECTED NUMBER</div>
             <div class="addr" id="numAddr">—</div>
@@ -269,10 +266,29 @@
         newEmail();
       }
 
-      // ---------- temp number (temp-sms.org) ----------
-      const TS_API = 'https://temp-sms.org/api/numbers';
-      const TS_INBOX = 'https://temp-sms.org/sms/';
-      let mode = 'mail', smsNumbers = [], selectedSms = null;
+      // ---------- temp number (Quackr free numbers) ----------
+      const QUACKR_NUMBERS = [
+        { country: 'india', label: '🇮🇳 India', number: '912086465729' },
+        { country: 'united-kingdom', label: '🇬🇧 UK', number: '447449741522' },
+        { country: 'united-kingdom', label: '🇬🇧 UK', number: '447472115446' },
+        { country: 'united-kingdom', label: '🇬🇧 UK', number: '447474739594' },
+        { country: 'united-kingdom', label: '🇬🇧 UK', number: '447576066270' },
+        { country: 'united-kingdom', label: '🇬🇧 UK', number: '447832791103' },
+        { country: 'united-states', label: '🇺🇸 USA', number: '17019976600' },
+        { country: 'united-states', label: '🇺🇸 USA', number: '17759865200' },
+        { country: 'australia', label: '🇦🇺 Australia', number: '61485906541' },
+        { country: 'germany', label: '🇩🇪 Germany', number: '4917615796128' },
+        { country: 'france', label: '🇫🇷 France', number: '33752251591' },
+        { country: 'spain', label: '🇪🇸 Spain', number: '34660099515' },
+        { country: 'netherlands', label: '🇳🇱 Netherlands', number: '3197058049630' },
+        { country: 'poland', label: '🇵🇱 Poland', number: '48573583715' },
+        { country: 'sweden', label: '🇸🇪 Sweden', number: '46726409241' },
+        { country: 'finland', label: '🇫🇮 Finland', number: '3584573997778' },
+        { country: 'brazil', label: '🇧🇷 Brazil', number: '5561981737725' },
+        { country: 'russia', label: '🇷🇺 Russia', number: '79995437632' }
+      ];
+      const QUACKR_INBOX = 'https://quackr.io/temporary-numbers/';
+      let mode = 'mail', smsNumbers = QUACKR_NUMBERS, selectedSms = null, numsRendered = false;
 
       function setMode(m) {
         mode = m;
@@ -281,36 +297,27 @@
         $('modeNumber').classList.toggle('on', m === 'number');
         $('mailSection').style.display = m === 'mail' ? '' : 'none';
         $('numberSection').style.display = m === 'number' ? '' : 'none';
-        if (m === 'number' && !smsNumbers.length) loadNumbers();
+        if (m === 'number' && !numsRendered) loadNumbers();
       }
-      async function loadNumbers() {
-        $('numList').innerHTML = '<div class="empty">Numbers load ho rahe hain…</div>';
-        try {
-          const res = await fetch(TS_API);
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const data = await res.json();
-          smsNumbers = Array.isArray(data.items) ? data.items : [];
-          if (!smsNumbers.length) throw new Error('no numbers');
-          $('numList').innerHTML = smsNumbers.map((n, i) => {
-            return '<div class="numrow' + (selectedSms && selectedSms.NumberFlat === n.NumberFlat ? ' sel' : '') + '" data-i="' + i + '">' +
-              '<span class="n">' + escapeHtml(n.NumberFormatted || n.NumberFlat) + '</span>' +
-              '<span class="c">🇳🇿 ' + (n.SmsCount != null ? n.SmsCount + ' SMS' : '') + '</span></div>';
-          }).join('');
-          $('numList').querySelectorAll('.numrow').forEach((el) => {
-            el.addEventListener('click', () => selectNumber(Number(el.getAttribute('data-i'))));
-          });
-        } catch (e) {
-          $('numList').innerHTML = '<div class="empty">Numbers load nahi hue — Refresh dabao.</div>';
-        }
+      function loadNumbers() {
+        numsRendered = true;
+        $('numList').innerHTML = smsNumbers.map((n, i) => {
+          return '<div class="numrow' + (selectedSms && selectedSms.number === n.number ? ' sel' : '') + '" data-i="' + i + '">' +
+            '<span class="n">+' + escapeHtml(n.number) + '</span>' +
+            '<span class="c">' + escapeHtml(n.label) + '</span></div>';
+        }).join('');
+        $('numList').querySelectorAll('.numrow').forEach((el) => {
+          el.addEventListener('click', () => selectNumber(Number(el.getAttribute('data-i'))));
+        });
       }
       function selectNumber(i) {
         const n = smsNumbers[i];
         if (!n) return;
         selectedSms = n;
         $('numList').querySelectorAll('.numrow').forEach((el) => el.classList.toggle('sel', Number(el.getAttribute('data-i')) === i));
-        $('numAddr').textContent = n.NumberFormatted || ('+' + n.NumberFlat);
+        $('numAddr').textContent = '+' + n.number;
         $('numSelected').style.display = 'block';
-        $('numFrame').src = TS_INBOX + encodeURIComponent(n.NumberFlat);
+        $('numFrame').src = QUACKR_INBOX + n.country + '/' + n.number;
         $('numSelected').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
       function msgFrom(m) { return m.from || m.sender || m.from_address || m.from_email || ''; }
@@ -753,10 +760,9 @@
       $('svcGuerrilla').addEventListener('click', () => switchService('guerrilla'));
       $('modeMail').addEventListener('click', () => setMode('mail'));
       $('modeNumber').addEventListener('click', () => setMode('number'));
-      $('numRefreshBtn').addEventListener('click', loadNumbers);
-      $('numCopyBtn').addEventListener('click', (e) => copyText(selectedSms ? (selectedSms.NumberFormatted || ('+' + selectedSms.NumberFlat)) : '', e.currentTarget));
-      $('numInboxBtn').addEventListener('click', () => { if (selectedSms) $('numFrame').src = TS_INBOX + encodeURIComponent(selectedSms.NumberFlat); });
-      $('numOpenBtn').addEventListener('click', () => { if (selectedSms) window.open(TS_INBOX + encodeURIComponent(selectedSms.NumberFlat), '_blank'); });
+      $('numCopyBtn').addEventListener('click', (e) => copyText(selectedSms ? ('+' + selectedSms.number) : '', e.currentTarget));
+      $('numInboxBtn').addEventListener('click', () => { if (selectedSms) $('numFrame').src = QUACKR_INBOX + selectedSms.country + '/' + selectedSms.number; });
+      $('numOpenBtn').addEventListener('click', () => { if (selectedSms) window.open(QUACKR_INBOX + selectedSms.country + '/' + selectedSms.number, '_blank'); });
       try { const savedMode = localStorage.getItem('twosec-mode'); if (savedMode === 'number' || savedMode === 'mail') mode = savedMode; } catch (e) {}
       setMode(mode);
       try { const saved = localStorage.getItem('twosec-service'); if (saved === 'kitten' || saved === 'mail123' || saved === 'maildrop' || saved === 'mailcatch' || saved === 'guerrilla') service = saved; } catch (e) {}
